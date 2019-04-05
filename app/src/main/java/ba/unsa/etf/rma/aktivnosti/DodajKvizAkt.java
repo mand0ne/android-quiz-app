@@ -13,7 +13,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,13 +22,14 @@ import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.klase.CustomAdapter;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.Kviz;
+import ba.unsa.etf.rma.klase.NDSpinner;
 import ba.unsa.etf.rma.klase.Pitanje;
 
 public class DodajKvizAkt extends AppCompatActivity {
 
     private ListView lvDodanaPitanja, lvMogucaPitanja;
     private View ldFooterView;
-    private Spinner spKategorije;
+    private NDSpinner spKategorije;
     private Button btnDodajKviz;
     private EditText etNaziv;
 
@@ -64,25 +64,23 @@ public class DodajKvizAkt extends AppCompatActivity {
         btnDodajKviz = findViewById(R.id.btnDodajKviz);
         etNaziv = findViewById(R.id.etNaziv);
 
-        trenutniKviz = (Kviz) intent.getParcelableExtra("kviz");
+        trenutniKviz = intent.getParcelableExtra("kviz");
 
         if (trenutniKviz == null)
             trenutniKviz = new Kviz(null, null);
 
         sAdapter = new ArrayAdapter<Kategorija>(this, android.R.layout.simple_spinner_item, kategorije);
         sAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        kategorije.add(new Kategorija("Dodaj kategoriju", "CADD00"));
+        kategorije.add(new Kategorija("Dodaj kategoriju", "-2"));
         spKategorije.setAdapter(sAdapter);
-
 
         initialize();
 
-        popuniMoguca();
-        adapterMoguca = new ArrayAdapter<Pitanje>(this, R.layout.element_liste, R.id.naziv, moguca);
+        adapterMoguca = new ArrayAdapter<>(this, R.layout.element_liste, R.id.naziv, moguca);
         lvMogucaPitanja.setAdapter(adapterMoguca);
 
-        if (intent.getStringExtra("mode").equals("change")) {
-            spKategorije.setSelection(intent.getIntExtra("kategorijaIndex", kategorije.size()) - 1);
+        if (intent.getIntExtra("requestCode", 0) == 2) {
+            spKategorije.setSelection(sAdapter.getPosition(trenutniKviz.getKategorija()));
 
             etNaziv.setText(trenutniKviz.getNaziv());
 
@@ -98,18 +96,12 @@ public class DodajKvizAkt extends AppCompatActivity {
             public void onClick(View v) {
                 if (validanUnos()) {
                     Intent i = new Intent();
-                    if (intent.getStringExtra("mode").equals("add")) {
-                        Kviz k = new Kviz(etNaziv.getText().toString(), (Kategorija) spKategorije.getSelectedItem());
-                        i.putExtra("kviz", k);
-                        i.putExtra("mode", "add");
-                    } else {
-                        trenutniKviz.setNaziv(etNaziv.getText().toString());
-                        trenutniKviz.setKategorija((Kategorija) spKategorije.getSelectedItem());
-                        i.putExtra("kviz", trenutniKviz);
-                        i.putExtra("mode", "change");
-                    }
+                    trenutniKviz.setNaziv(etNaziv.getText().toString());
+                    trenutniKviz.setKategorija((Kategorija) spKategorije.getSelectedItem());
+                    trenutniKviz.setPitanja(dodana);
+                    i.putExtra("kviz", trenutniKviz);
                     i.putExtra("index", intent.getIntExtra("index", 0));
-                    setResult(1, i);
+                    setResult(RESULT_OK, i);
                     finish();
                 } else {
                     if (etNaziv.getText().toString().trim().equalsIgnoreCase(""))
@@ -121,7 +113,6 @@ public class DodajKvizAkt extends AppCompatActivity {
                         errorText.setTextColor(Color.RED);
                         spKategorije.setSelection(0);
                         Toast.makeText(DodajKvizAkt.this, "Izaberite/Unesite kategoriju", Toast.LENGTH_SHORT).show();
-
                     }
                 }
             }
@@ -133,7 +124,7 @@ public class DodajKvizAkt extends AppCompatActivity {
                                             public void onClick(View v) {
                                                 Intent intent = new Intent(DodajKvizAkt.this, DodajPitanjeAkt.class);
                                                 intent.putExtra("kviz", trenutniKviz);
-                                                startActivityForResult(intent, 2);
+                                                startActivityForResult(intent, 4);
                                             }
                                         }
         );
@@ -158,7 +149,7 @@ public class DodajKvizAkt extends AppCompatActivity {
                 if (position == kategorije.size() - 1) {
                     Intent i = new Intent(DodajKvizAkt.this, DodajKategorijuAkt.class);
                     i.putExtra("kviz", trenutniKviz);
-                    startActivityForResult(i, 3);
+                    startActivityForResult(i, 5);
                 }
             }
 
@@ -179,46 +170,46 @@ public class DodajKvizAkt extends AppCompatActivity {
 
     private void initialize() {
         adapterDodana = new CustomAdapter(this, dodana, getResources());
-        ldFooterView = adapterDodana.getFooterView(lvDodanaPitanja, "Dodaj pitanje");
+
         lvDodanaPitanja.setAdapter(adapterDodana);
-        lvDodanaPitanja.addFooterView(ldFooterView);
+        lvDodanaPitanja.addFooterView(ldFooterView = adapterDodana.getFooterView(lvDodanaPitanja, "Dodaj pitanje"));
     }
 
-    private void popuniMoguca() {
-        ArrayList<Kviz> sviKvizovi = getIntent().getParcelableArrayListExtra("kvizovi");
+    private boolean postojiKviz() {
+        String naziv = etNaziv.getText().toString();
+        for (Kviz k : kvizovi)
+            if (k.getNaziv().equalsIgnoreCase(naziv))
+                return true;
 
-        for (Kviz k : sviKvizovi) {
-            if ((trenutniKviz != null && k.equals(trenutniKviz)) || k.getPitanja() == null)
-                continue;
-            for (Pitanje p : k.getPitanja())
-                moguca.add(p);
-        }
+        return false;
     }
 
     private boolean validanUnos() {
         return (etNaziv.getText() != null && etNaziv.getText().length() != 0
-                && spKategorije.getSelectedItemPosition() != kategorije.size() - 1);
+                && spKategorije.getSelectedItemPosition() != kategorije.size() - 1
+                && !postojiKviz());
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (data != null) {
-            trenutniKviz = (Kviz) data.getParcelableExtra("kviz");
+        if (resultCode == RESULT_OK) {
+            if (data != null) {
+                trenutniKviz = data.getParcelableExtra("kviz");
 
-            if (trenutniKviz.getPitanja() != null)
-                dodana = new ArrayList<>(trenutniKviz.getPitanja());
+                if (requestCode == 4 && trenutniKviz.getPitanja() != null) {
+                    dodana = new ArrayList<>(trenutniKviz.getPitanja());
+                    adapterDodana.setList(dodana);
+                    adapterDodana.notifyDataSetChanged();
+                }
 
-            if(requestCode == 3){
-                kategorije.add(kategorije.size() -1, trenutniKviz.getKategorija());
-                sAdapter.notifyDataSetChanged();
-                spKategorije.setSelection(kategorije.size() - 2);
+                if (requestCode == 5) {
+                    kategorije.add(kategorije.size() - 1, trenutniKviz.getKategorija());
+                    sAdapter.notifyDataSetChanged();
+                    spKategorije.setSelection(kategorije.size() - 2);
+                }
             }
-
-            adapterDodana.setList(dodana);
-            adapterDodana.notifyDataSetChanged();
         }
     }
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

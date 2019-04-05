@@ -82,4 +82,5 @@ public class CustomAdapter extends ArrayAdapter<Object> {
 
         return fview;
     }
+
 }

@@ -6,6 +6,7 @@ import android.graphics.PorterDuff;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -44,12 +45,22 @@ public class DodajPitanjeAkt extends AppCompatActivity {
         btnDodajTacan = findViewById(R.id.btnDodajTacan);
         btnDodajPitanje = findViewById(R.id.btnDodajPitanje);
 
-
         Intent intent = getIntent();
-        trenutniKviz = (Kviz) intent.getParcelableExtra("kviz");
+        trenutniKviz = intent.getParcelableExtra("kviz");
 
-        adapter = new ArrayAdapter<String>(this, R.layout.element_odgovora, R.id.odgovor, odgovori);
+        adapter = (new ArrayAdapter<String>(this, R.layout.element_odgovora, R.id.odgovor, odgovori) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View row = super.getView(position, null, parent);
 
+                if (getItem(position).equals(novoPitanje.getTacan()))
+                    row.setBackgroundColor(Color.GREEN);
+                else
+                    row.setBackgroundColor(0);
+
+                return row;
+            }
+        });
         lvOdgovori.setAdapter(adapter);
 
         novoPitanje = new Pitanje(etNaziv.getText().toString(), etNaziv.getText().toString(), null);
@@ -63,10 +74,10 @@ public class DodajPitanjeAkt extends AppCompatActivity {
                         odgovori.add(odgovor);
                         adapter.notifyDataSetChanged();
                         novoPitanje.dodajOdgovor(odgovor);
+                        etOdgovor.setText("");
                     }
-                } else {
+                } else
                     etOdgovor.setError("Unesite odgovor!");
-                }
             }
         });
 
@@ -75,22 +86,18 @@ public class DodajPitanjeAkt extends AppCompatActivity {
             public void onClick(View v) {
                 if (validanOdgovor()) {
                     String odgovor = etOdgovor.getText().toString();
-                    odgovori.add(0, odgovor);
-                    adapter.notifyDataSetChanged();
-                    novoPitanje.dodajOdgovor(odgovor);
-                    novoPitanje.setTacan(odgovor);
-                    btnDodajTacan.setEnabled(false);
-                    btnDodajTacan.getBackground().setColorFilter(0xFFb79d9d, PorterDuff.Mode.MULTIPLY);
+                    if (!novoPitanje.postojiOdgovor(odgovor)) {
+                        novoPitanje.dodajOdgovor(odgovor);
+                        novoPitanje.setTacan(odgovor);
+                        btnDodajTacan.setEnabled(false);
+                        btnDodajTacan.getBackground().setColorFilter(0xFFb79d9d, PorterDuff.Mode.MULTIPLY);
 
-                    lvOdgovori.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            lvOdgovori.getChildAt(0).setBackgroundColor(Color.GREEN);
-                        }
-                    });
-                } else {
+                        odgovori.add(odgovor);
+                        adapter.notifyDataSetChanged();
+                        etOdgovor.setText("");
+                    }
+                } else
                     etOdgovor.setError("Unesite odgovor!");
-                }
             }
         });
 
@@ -98,7 +105,6 @@ public class DodajPitanjeAkt extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 String obrisani = odgovori.remove(position);
-                etNaziv.setText(obrisani);
                 novoPitanje.getOdgovori().remove(obrisani);
                 adapter.notifyDataSetChanged();
             }
@@ -113,11 +119,10 @@ public class DodajPitanjeAkt extends AppCompatActivity {
                     novoPitanje.setTekstPitanja(etNaziv.getText().toString());
                     trenutniKviz.getPitanja().add(novoPitanje);
                     i.putExtra("kviz", trenutniKviz);
-                    setResult(2, i);
+                    setResult(RESULT_OK, i);
                     finish();
-                } else {
+                } else
                     etNaziv.setError("Unesite ime pitanja!");
-                }
             }
         });
     }
@@ -127,7 +132,7 @@ public class DodajPitanjeAkt extends AppCompatActivity {
     }
 
     boolean validnoPitanje() {
-        return !etNaziv.getText().toString().trim().equalsIgnoreCase("")
+        return etNaziv.getText().length() != 0
                 && !trenutniKviz.sadrziPitanje(novoPitanje);
     }
 }

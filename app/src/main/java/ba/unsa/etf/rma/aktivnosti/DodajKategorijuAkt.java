@@ -32,6 +32,7 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         btnDodajIkonu = findViewById(R.id.btnDodajIkonu);
         etNaziv = findViewById(R.id.etNaziv);
         etIkona = findViewById(R.id.etIkona);
+        etIkona.setEnabled(false);
 
         Intent intent = getIntent();
         final IconDialog iconDialog = new IconDialog();
@@ -48,19 +49,18 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         btnDodajKategoriju.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(validanUnos()){
-                Kategorija novaKategorija = new Kategorija(etNaziv.getText().toString(), etIkona.getText().toString());
-                trenutniKviz.setKategorija(novaKategorija);
-                Intent i = new Intent();
-                i.putExtra("kviz", trenutniKviz);
-                setResult(RESULT_OK, i);
-                finish();
-                }
-                else{
-                    if(etNaziv.getText().toString().length() == 0)
+                if (validanUnos()) {
+                    Kategorija novaKategorija = new Kategorija(etNaziv.getText().toString(), etIkona.getText().toString());
+                    trenutniKviz.setKategorija(novaKategorija);
+                    Intent i = new Intent();
+                    i.putExtra("kviz", trenutniKviz);
+                    setResult(RESULT_OK, i);
+                    finish();
+                } else {
+                    if (etNaziv.getText().toString().length() == 0)
                         etNaziv.setError("Unesite naziv kategorije!");
 
-                    if(etIkona.getText().toString().length() == 0)
+                    if (etIkona.getText().toString().length() == 0)
                         etNaziv.setError("Izaberite ikonu!");
                 }
             }
@@ -68,10 +68,11 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
 
     }
 
-    private boolean validanUnos(){
+    private boolean validanUnos() {
         return etIkona.getText().toString().length() != 0
                 && etNaziv.getText().toString().length() != 0;
     }
+
     @Override
     public void onIconDialogIconsSelected(Icon[] icons) {
         selectedIcons = icons;

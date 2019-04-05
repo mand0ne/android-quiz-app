@@ -53,6 +53,11 @@ public class CustomAdapter extends ArrayAdapter<Object> {
 
             ((TextView) listItem.findViewById(R.id.naziv)).setText(trenutniKviz.getNaziv());
         }
+        else if(list.get(position) instanceof  Pitanje){
+            Pitanje pitanje = (Pitanje) list.get(position);
+            ((ImageView)listItem.findViewById(R.id.ikona)).setImageResource(R.drawable.questionico);
+            ((TextView) listItem.findViewById(R.id.naziv)).setText(pitanje.getNaziv());
+        }
 
         return listItem;
     }

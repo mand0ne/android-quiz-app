@@ -49,16 +49,14 @@ public class KvizoviAkt extends AppCompatActivity {
         sAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spPostojeceKategorije.setAdapter(sAdapter);
 
-
-
         // Klik na zadnji element liste koji je za dodavanje novog kviza
         lvFooterView.setOnClickListener(new View.OnClickListener() {
                                             @Override
                                             public void onClick(View v) {
                                                 Intent intent = new Intent(context, DodajKvizAkt.class);
                                                 intent.putExtra("mode", "add");
-                                                intent.putExtra("kategorije", kategorije);
-                                                intent.putExtra("kvizovi", kvizovi);
+                                                intent.putParcelableArrayListExtra("kategorije", kategorije);
+                                                intent.putParcelableArrayListExtra("kvizovi", kvizovi);
                                                 startActivityForResult(intent, 1);
                                             }
                                         }
@@ -71,8 +69,8 @@ public class KvizoviAkt extends AppCompatActivity {
 
                     Intent intent = new Intent(context, DodajKvizAkt.class);
                     intent.putExtra("mode", "change");
-                    intent.putExtra("kategorije", kategorije);
-                    intent.putExtra("kvizovi", kvizovi);
+                    intent.putParcelableArrayListExtra("kategorije", kategorije);
+                    intent.putParcelableArrayListExtra("kvizovi", kvizovi);
                     intent.putExtra("index", position);
                     intent.putExtra("kategorijaIndex", Integer.valueOf(kvizovi.get(position).getKategorija().getId().substring(4)));
                     intent.putExtra("kviz", kvizovi.get(position));
@@ -117,7 +115,7 @@ public class KvizoviAkt extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (data != null) {
-            Kviz novi = (Kviz) data.getSerializableExtra("kviz");
+            Kviz novi = (Kviz) data.getParcelableExtra("kviz");
             if(data.getStringExtra("mode").equals("change"))
                 kvizovi.set(data.getIntExtra("index", 0), novi);
             else

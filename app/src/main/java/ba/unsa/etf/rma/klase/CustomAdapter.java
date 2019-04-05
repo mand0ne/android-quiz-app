@@ -2,6 +2,7 @@ package ba.unsa.etf.rma.klase;
 
 import android.content.Context;
 import android.content.res. Resources;
+import android.graphics.drawable.Icon;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -10,6 +11,10 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.maltaisn.icondialog.IconDialog;
+import com.maltaisn.icondialog.IconHelper;
+
 import java.util.ArrayList;
 import java.util.List;
 import ba.unsa.etf.rma.R;
@@ -55,7 +60,16 @@ public class CustomAdapter extends ArrayAdapter<Object> {
         }
         else if(list.get(position) instanceof  Pitanje){
             Pitanje pitanje = (Pitanje) list.get(position);
-            ((ImageView)listItem.findViewById(R.id.ikona)).setImageResource(R.drawable.questionico);
+            final IconHelper iconHelper = IconHelper.getInstance(context);
+            final View finalListItem = listItem;
+            iconHelper.addLoadCallback(new IconHelper.LoadCallback() {
+                @Override
+                public void onDataLoaded() {
+                    // This happens on UI thread, and is guaranteed to be called.
+                    ((ImageView) finalListItem.findViewById(R.id.ikona)).setImageDrawable(iconHelper.getIcon(3).getDrawable(context));
+                }
+            });
+
             ((TextView) listItem.findViewById(R.id.naziv)).setText(pitanje.getNaziv());
         }
 
@@ -68,6 +82,4 @@ public class CustomAdapter extends ArrayAdapter<Object> {
 
         return fview;
     }
-
-
 }

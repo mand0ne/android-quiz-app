@@ -46,7 +46,7 @@ public class DodajPitanjeAkt extends AppCompatActivity {
 
 
         Intent intent = getIntent();
-        trenutniKviz = (Kviz) intent.getSerializableExtra("kviz");
+        trenutniKviz = (Kviz) intent.getParcelableExtra("kviz");
 
         adapter = new ArrayAdapter<String>(this, R.layout.element_odgovora, R.id.odgovor, odgovori);
 

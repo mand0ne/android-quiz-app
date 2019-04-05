@@ -1,5 +1,6 @@
 package ba.unsa.etf.rma.aktivnosti;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.Button;
@@ -23,6 +24,8 @@ public class DodajKategorijuAkt extends AppCompatActivity {
         btnDodajIkonu = findViewById(R.id.btnDodajIkonu);
         etNaziv = findViewById(R.id.etNaziv);
         etIkona = findViewById(R.id.etIkona);
-        
+
+        Intent intent = getIntent();
+
     }
 }

@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -71,6 +72,8 @@ public class DodajKvizAkt extends AppCompatActivity {
         kategorije.add(new Kategorija("Dodaj kategoriju", "CADD00"));
         spKategorije.setAdapter(sAdapter);
 
+
+
         initialize();
 
         popuniMoguca();
@@ -116,7 +119,9 @@ public class DodajKvizAkt extends AppCompatActivity {
                         TextView errorText = (TextView) spKategorije.getSelectedView();
                         errorText.setError("");
                         errorText.setTextColor(Color.RED);
-                        errorText.setText("Izaberite/Unesite kategoriju!");
+                        spKategorije.setSelection(0);
+                        Toast.makeText(DodajKvizAkt.this, "Izaberite/Unesite kategoriju", Toast.LENGTH_SHORT).show();
+
                     }
                 }
             }
@@ -146,6 +151,21 @@ public class DodajKvizAkt extends AppCompatActivity {
                 exchange(moguca, dodana, position);
             }
         });
+
+        spKategorije.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if(position == kategorije.size() - 1){
+                    Intent i = new Intent(DodajKvizAkt.this, DodajKategorijuAkt.class);
+                    startActivity(i);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                spKategorije.setSelection(0);
+            }
+        });
     }
 
     private void exchange(ArrayList<Pitanje> source, ArrayList<Pitanje> destination, int position){
@@ -164,7 +184,7 @@ public class DodajKvizAkt extends AppCompatActivity {
     }
 
     private void popuniMoguca() {
-        ArrayList<Kviz> sviKvizovi = (ArrayList<Kviz>) getIntent().getSerializableExtra("kvizovi");
+        ArrayList<Kviz> sviKvizovi = getIntent().getParcelableArrayListExtra("kvizovi");
 
         for(Kviz k : sviKvizovi){
             if((trenutniKviz != null && k.equals(trenutniKviz)) || k.getPitanja() == null)
@@ -181,14 +201,18 @@ public class DodajKvizAkt extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (data != null) {
-            trenutniKviz = (Kviz) data.getParcelableExtra("kviz");
+        if (resultCode == 3)
+            Toast.makeText(this, "fuck", Toast.LENGTH_SHORT).show();
+        else {
+            if (data != null) {
+                trenutniKviz = (Kviz) data.getParcelableExtra("kviz");
 
-            if(trenutniKviz.getPitanja() != null)
-                dodana = new ArrayList<>(trenutniKviz.getPitanja());
+                if (trenutniKviz.getPitanja() != null)
+                    dodana = new ArrayList<>(trenutniKviz.getPitanja());
 
-            adapterDodana.setList(dodana);
-            adapterDodana.notifyDataSetChanged();
+                adapterDodana.setList(dodana);
+                adapterDodana.notifyDataSetChanged();
+            }
         }
     }
 

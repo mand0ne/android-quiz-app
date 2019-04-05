@@ -29,7 +29,7 @@ public class KvizoviAkt extends AppCompatActivity {
     private ArrayList<Kategorija> kategorije = new ArrayList<>();
     private ArrayList<Kviz> kvizovi = new ArrayList<>();
 
-    private ArrayAdapter<Kategorija> sAdapter = null;   // Basic adapter za spiner
+    private ArrayAdapter<Kategorija> sAdapter = null;
     private CustomAdapter adapter = null;
 
     @Override
@@ -62,6 +62,7 @@ public class KvizoviAkt extends AppCompatActivity {
                                         }
         );
 
+        // Klik na kviz za uredjivanje
         lvKvizovi.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -109,13 +110,13 @@ public class KvizoviAkt extends AppCompatActivity {
                 spPostojeceKategorije.setSelection(0);
             }
         });
-
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (data != null) {
-            Kviz novi = (Kviz) data.getParcelableExtra("kviz");
+            Kviz novi = data.getParcelableExtra("kviz");
+
             if(data.getStringExtra("mode").equals("change"))
                 kvizovi.set(data.getIntExtra("index", 0), novi);
             else
@@ -128,7 +129,7 @@ public class KvizoviAkt extends AppCompatActivity {
 
     private void initialize() {
         // Za spiner
-        kategorije.add(new Kategorija("Svi", "CSVI00")); // Univerzalna kategorija
+        kategorije.add(new Kategorija("Svi", "CSVI00"));
 
         // Za ListView
         adapter = new CustomAdapter(context, kvizovi, getResources());
@@ -138,11 +139,12 @@ public class KvizoviAkt extends AppCompatActivity {
 
 
     private void popuniKategorije() {
-        kategorije.add(new Kategorija("Sport", "QSPO1"));
-        kategorije.add(new Kategorija("Igre", "QIGR2"));
-        /*kategorije.add(new Kategorija("Matematika","MAT3"));
-        kategorije.add(new Kategorija("Historija","HIST4"));
-        kategorije.add(new Kategorija("Geografija","GEO5"));*/
+        kategorije.add(new Kategorija("Sport", "CSPO1"));
+        kategorije.add(new Kategorija("Igre", "CIGR2"));
+        kategorije.add(new Kategorija("Matematika","CMAT3"));
+        kategorije.add(new Kategorija("Historija","CHIS4"));
+        kategorije.add(new Kategorija("Geografija","CGEO5"));
+
     }
 
     private void popuniKvizove() {

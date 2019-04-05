@@ -1,8 +1,11 @@
 package ba.unsa.etf.rma.klase;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.ArrayList;
 
-public class Kviz implements Comparable<Kviz> {
+public class Kviz implements Comparable<Kviz>, Parcelable {
     private String naziv;
     private ArrayList<Pitanje> pitanja = new ArrayList<>();
     private Kategorija kategorija;
@@ -64,4 +67,35 @@ public class Kviz implements Comparable<Kviz> {
     public int compareTo(Kviz o) {
         return this.getNaziv().compareTo(o.getNaziv());
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(this.naziv);
+        dest.writeList(this.pitanja);
+        dest.writeParcelable(this.kategorija, flags);
+    }
+
+    protected Kviz(Parcel in) {
+        this.naziv = in.readString();
+        this.pitanja = new ArrayList<Pitanje>();
+        in.readList(this.pitanja, Pitanje.class.getClassLoader());
+        this.kategorija = in.readParcelable(Kategorija.class.getClassLoader());
+    }
+
+    public static final Parcelable.Creator<Kviz> CREATOR = new Parcelable.Creator<Kviz>() {
+        @Override
+        public Kviz createFromParcel(Parcel source) {
+            return new Kviz(source);
+        }
+
+        @Override
+        public Kviz[] newArray(int size) {
+            return new Kviz[size];
+        }
+    };
 }

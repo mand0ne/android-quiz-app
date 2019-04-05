@@ -1,9 +1,12 @@
 package ba.unsa.etf.rma.klase;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class Pitanje {
+public class Pitanje implements Parcelable {
     private String naziv;
     private String tekstPitanja;
     private ArrayList<String> odgovori = new ArrayList<>();
@@ -67,4 +70,36 @@ public class Pitanje {
     public String toString() {
         return naziv;
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(this.naziv);
+        dest.writeString(this.tekstPitanja);
+        dest.writeStringList(this.odgovori);
+        dest.writeString(this.tacan);
+    }
+
+    protected Pitanje(Parcel in) {
+        this.naziv = in.readString();
+        this.tekstPitanja = in.readString();
+        this.odgovori = in.createStringArrayList();
+        this.tacan = in.readString();
+    }
+
+    public static final Parcelable.Creator<Pitanje> CREATOR = new Parcelable.Creator<Pitanje>() {
+        @Override
+        public Pitanje createFromParcel(Parcel source) {
+            return new Pitanje(source);
+        }
+
+        @Override
+        public Pitanje[] newArray(int size) {
+            return new Pitanje[size];
+        }
+    };
 }

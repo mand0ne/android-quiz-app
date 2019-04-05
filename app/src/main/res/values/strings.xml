@@ -11,4 +11,6 @@
     <string name="btnDodajOdgovor">Dodaj</string>
     <string name="btnDodajTacan">Dodaj tacan</string>
     <string name="btnDodajPitanje">Spasi pitanje</string>
+    <string name="saveCategory">Spasi kategoriju</string>
+    <string name="addCategoryIcon">Dodaj ikonu</string>
 </resources>

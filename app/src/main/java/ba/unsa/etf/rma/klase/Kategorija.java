@@ -16,6 +16,7 @@ public class Kategorija implements Parcelable {
         return naziv;
     }
 
+    @SuppressWarnings("unused")
     public void setNaziv(String naziv) {
         this.naziv = naziv;
     }
@@ -31,6 +32,9 @@ public class Kategorija implements Parcelable {
 
     @Override
     public boolean equals(Object obj) {
+        if(getClass() != obj.getClass())
+            return false;
+
         return this.naziv.equals(((Kategorija)obj).naziv) && this.id.equals(((Kategorija)obj).id);
     }
 
@@ -38,7 +42,7 @@ public class Kategorija implements Parcelable {
         this.id = id;
     }
 
-
+    @SuppressWarnings("NullableProblems")
     @Override
     public String toString() {
         return naziv;
@@ -55,7 +59,7 @@ public class Kategorija implements Parcelable {
         dest.writeString(this.id);
     }
 
-    protected Kategorija(Parcel in) {
+    private Kategorija(Parcel in) {
         this.naziv = in.readString();
         this.id = in.readString();
     }

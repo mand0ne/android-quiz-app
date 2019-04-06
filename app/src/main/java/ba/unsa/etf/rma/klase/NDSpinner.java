@@ -23,7 +23,12 @@ public class NDSpinner extends android.support.v7.widget.AppCompatSpinner {
         boolean sameSelected = position == getSelectedItemPosition();
         super.setSelection(position, animate);
         if (sameSelected)
-            Objects.requireNonNull(getOnItemSelectedListener()).onItemSelected(this, getSelectedView(), position, getSelectedItemId());
+            try {
+                Objects.requireNonNull(getOnItemSelectedListener()).onItemSelected(this, getSelectedView(), position, getSelectedItemId());
+            }
+            catch(Exception e){
+                // do nothing
+            }
     }
 
     @Override
@@ -31,6 +36,11 @@ public class NDSpinner extends android.support.v7.widget.AppCompatSpinner {
         boolean sameSelected = position == getSelectedItemPosition();
         super.setSelection(position);
         if (sameSelected)
-            Objects.requireNonNull(getOnItemSelectedListener()).onItemSelected(this, getSelectedView(), position, getSelectedItemId());
+            try {
+                Objects.requireNonNull(getOnItemSelectedListener()).onItemSelected(this, getSelectedView(), position, getSelectedItemId());
+            }
+            catch(Exception e){
+                // do nothing
+            }
     }
 }

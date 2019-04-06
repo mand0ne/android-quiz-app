@@ -10,11 +10,12 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
     private ArrayList<Pitanje> pitanja = new ArrayList<>();
     private Kategorija kategorija;
 
-    public Kviz(String naziv, Kategorija kategorija){
+    public Kviz(String naziv, Kategorija kategorija) {
         this.naziv = naziv;
         this.kategorija = kategorija;
     }
 
+    @SuppressWarnings("unused")
     public Kviz(String naziv, ArrayList<Pitanje> pitanja, Kategorija kategorija) {
         this.naziv = naziv;
         this.pitanja = pitanja;
@@ -45,22 +46,26 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         this.kategorija = kategorija;
     }
 
-    public void dodajPitanje(Pitanje p){
+    @SuppressWarnings("unused")
+    public void dodajPitanje(Pitanje p) {
         pitanja.add(p);
     }
 
-    public boolean sadrziPitanje(Pitanje p){
+    public boolean sadrziPitanje(Pitanje p) {
         return pitanja.contains(p);
     }
 
     @Override
-    public boolean equals(Object ob) {
-        return this.naziv.equals(((Kviz)ob).naziv);
+    public boolean equals(Object obj) {
+        if (getClass() != obj.getClass())
+            return false;
+
+        return this.naziv.equals(((Kviz) obj).naziv);
     }
 
     @Override
     public int hashCode() {
-        return naziv.hashCode()+kategorija.getId().hashCode();
+        return naziv.hashCode() + kategorija.getId().hashCode();
     }
 
     @Override
@@ -80,9 +85,9 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         dest.writeParcelable(this.kategorija, flags);
     }
 
-    protected Kviz(Parcel in) {
+    private Kviz(Parcel in) {
         this.naziv = in.readString();
-        this.pitanja = new ArrayList<Pitanje>();
+        this.pitanja = new ArrayList<>();
         in.readList(this.pitanja, Pitanje.class.getClassLoader());
         this.kategorija = in.readParcelable(Kategorija.class.getClassLoader());
     }

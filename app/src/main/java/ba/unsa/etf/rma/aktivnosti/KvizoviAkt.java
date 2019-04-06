@@ -74,6 +74,7 @@ public class KvizoviAkt extends AppCompatActivity {
                 // koja se moze poremetiti zbog recikliranja u getView metodi.
                 intent.putExtra("index", position);
 
+                intent.putExtra("requestCode", 2);
                 intent.putExtra("kviz", kvizovi.get(position));
                 startActivityForResult(intent, 2);
             }

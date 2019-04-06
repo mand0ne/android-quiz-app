@@ -76,19 +76,16 @@ public class DodajKvizAkt extends AppCompatActivity {
 
         initialize();
 
+        dodana = new ArrayList<>(trenutniKviz.getPitanja());
+        adapterDodana = new CustomAdapter(this, dodana, getResources());
+        lvDodanaPitanja.setAdapter(adapterDodana);
+
         adapterMoguca = new ArrayAdapter<>(this, R.layout.element_liste, R.id.naziv, moguca);
         lvMogucaPitanja.setAdapter(adapterMoguca);
 
         if (intent.getIntExtra("requestCode", 0) == 2) {
             spKategorije.setSelection(sAdapter.getPosition(trenutniKviz.getKategorija()));
-
             etNaziv.setText(trenutniKviz.getNaziv());
-
-            if (trenutniKviz.getPitanja() != null)
-                dodana = new ArrayList<>(trenutniKviz.getPitanja());
-
-            adapterDodana = new CustomAdapter(this, dodana, getResources());
-            lvDodanaPitanja.setAdapter(adapterDodana);
         }
 
         btnDodajKviz.setOnClickListener(new View.OnClickListener() {
@@ -196,7 +193,7 @@ public class DodajKvizAkt extends AppCompatActivity {
             if (data != null) {
                 trenutniKviz = data.getParcelableExtra("kviz");
 
-                if (requestCode == 4 && trenutniKviz.getPitanja() != null) {
+                if (requestCode == 4) {
                     dodana = new ArrayList<>(trenutniKviz.getPitanja());
                     adapterDodana.setList(dodana);
                     adapterDodana.notifyDataSetChanged();

@@ -4,21 +4,25 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher2"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/ic_launcher2_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".aktivnosti.DodajKategorijuAkt"></activity>
-        <activity android:name=".aktivnosti.DodajPitanjeAkt" />
-        <activity android:name=".aktivnosti.DodajKvizAkt" />
-        <activity android:name=".aktivnosti.KvizoviAkt">
+        <activity android:name=".aktivnosti.DodajKategorijuAkt"
+            android:configChanges="orientation|screenSize" />
+        <activity android:name=".aktivnosti.DodajPitanjeAkt"
+            android:configChanges="orientation|screenSize"/>
+        <activity android:name=".aktivnosti.DodajKvizAkt"
+            android:configChanges="orientation|screenSize"/>
+        <activity android:name=".aktivnosti.KvizoviAkt" android:configChanges="orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>

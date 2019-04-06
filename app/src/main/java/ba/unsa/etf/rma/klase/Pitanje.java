@@ -6,6 +6,7 @@ import android.os.Parcelable;
 import java.util.ArrayList;
 import java.util.Collections;
 
+@SuppressWarnings("unused")
 public class Pitanje implements Parcelable {
     private String naziv;
     private String tekstPitanja;
@@ -58,14 +59,15 @@ public class Pitanje implements Parcelable {
         return randomOdgovori;
     }
 
-    public boolean postojiOdgovor(String odgovor){
-        return odgovori.contains(odgovor);
+    public boolean nePostojiOdgovor(String odgovor){
+        return !odgovori.contains(odgovor);
     }
 
     public void dodajOdgovor(String odgovor){
         odgovori.add(odgovor);
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public String toString() {
         return naziv;
@@ -84,7 +86,7 @@ public class Pitanje implements Parcelable {
         dest.writeString(this.tacan);
     }
 
-    protected Pitanje(Parcel in) {
+    private Pitanje(Parcel in) {
         this.naziv = in.readString();
         this.tekstPitanja = in.readString();
         this.odgovori = in.createStringArrayList();

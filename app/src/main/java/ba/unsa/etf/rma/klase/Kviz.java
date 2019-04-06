@@ -15,13 +15,6 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         this.kategorija = kategorija;
     }
 
-    @SuppressWarnings("unused")
-    public Kviz(String naziv, ArrayList<Pitanje> pitanja, Kategorija kategorija) {
-        this.naziv = naziv;
-        this.pitanja = pitanja;
-        this.kategorija = kategorija;
-    }
-
     public String getNaziv() {
         return naziv;
     }
@@ -46,7 +39,7 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         this.kategorija = kategorija;
     }
 
-    @SuppressWarnings("unused")
+
     public void dodajPitanje(Pitanje p) {
         pitanja.add(p);
     }

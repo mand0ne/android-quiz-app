@@ -32,13 +32,12 @@
         android:cursorVisible="true"
         android:ems="10"
         android:focusable="true"
+        android:hint="@string/etNazivKviza"
         android:inputType="textPersonName|text"
-        android:text="@string/etNazivKviza"
         app:layout_constraintBottom_toTopOf="@+id/LabelForAktivna"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/spKategorije"
-        tools:text="@string/etNazivKviza" />
+        app:layout_constraintTop_toBottomOf="@+id/spKategorije" />
 
     <TextView
         android:id="@+id/LabelForAktivna"

@@ -10,16 +10,16 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Spinner;
-
 import java.util.ArrayList;
-
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.klase.CustomAdapter;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.Kviz;
-import ba.unsa.etf.rma.klase.Pitanje;
 
 public class KvizoviAkt extends AppCompatActivity {
+
+    static final int DODAJ_KVIZ = 1100;
+    static final int PROMIJENI_KVIZ = 2100;
 
     private Context context;
     private ListView lvKvizovi;
@@ -42,8 +42,6 @@ public class KvizoviAkt extends AppCompatActivity {
         spPostojeceKategorije = findViewById(R.id.spPostojeceKategorije);
 
         initialize();
-        // popuniKategorije();
-        // popuniKvizove();
 
         sAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, kategorije);
         sAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -54,10 +52,10 @@ public class KvizoviAkt extends AppCompatActivity {
                                             @Override
                                             public void onClick(View v) {
                                                 Intent intent = new Intent(context, DodajKvizAkt.class);
-                                                intent.putExtra("requestCode", 1);
+                                                intent.putExtra("requestCode", DODAJ_KVIZ);
                                                 intent.putParcelableArrayListExtra("kategorije", kategorije);
                                                 intent.putParcelableArrayListExtra("kvizovi", kvizovi);
-                                                startActivityForResult(intent, 1);
+                                                startActivityForResult(intent, DODAJ_KVIZ);
                                             }
                                         }
         );
@@ -69,14 +67,14 @@ public class KvizoviAkt extends AppCompatActivity {
                 Intent intent = new Intent(context, DodajKvizAkt.class);
                 intent.putParcelableArrayListExtra("kategorije", kategorije);
                 intent.putParcelableArrayListExtra("kvizovi", kvizovi);
+                intent.putExtra("kviz", kvizovi.get(position));
 
                 // Zapamtiti TACNU poziciju u listView-u
                 // koja se moze poremetiti zbog recikliranja u getView metodi.
                 intent.putExtra("index", position);
 
-                intent.putExtra("requestCode", 2);
-                intent.putExtra("kviz", kvizovi.get(position));
-                startActivityForResult(intent, 2);
+                intent.putExtra("requestCode", PROMIJENI_KVIZ);
+                startActivityForResult(intent, PROMIJENI_KVIZ);
             }
         });
 
@@ -116,24 +114,30 @@ public class KvizoviAkt extends AppCompatActivity {
         if (resultCode == RESULT_OK) {
             if (data != null) {
                 Kviz novi = data.getParcelableExtra("kviz");
-                if (requestCode == 2)
+                if (requestCode == PROMIJENI_KVIZ)
                     kvizovi.set(data.getIntExtra("index", 0), novi);
-                else if(requestCode == 1)
+                else if (requestCode == DODAJ_KVIZ)
                     kvizovi.add(novi);
 
-                Kategorija nova = novi.getKategorija();
-                if(!kategorije.contains(nova)){
-                    kategorije.add(nova);
-                    sAdapter.notifyDataSetChanged();
-                }
+                azurirajKategorije(data);
             }
 
             adapter.notifyDataSetChanged();
         }
+        else if(resultCode == RESULT_CANCELED)
+             azurirajKategorije(data);
+    }
+
+    public void azurirajKategorije(@Nullable Intent data){
+        kategorije.clear();
+        assert data != null;
+        kategorije.addAll(data.<Kategorija>getParcelableArrayListExtra("kategorije"));
+        kategorije.remove(kategorije.size() - 1);
+        sAdapter.notifyDataSetChanged();
     }
 
     private void initialize() {
-        // Za spiner
+        // Za Spinner
         kategorije.add(new Kategorija("Svi", "-1"));
 
         // Za ListView
@@ -141,36 +145,4 @@ public class KvizoviAkt extends AppCompatActivity {
         lvKvizovi.setAdapter(adapter);
         lvKvizovi.addFooterView(lvFooterView = adapter.getFooterView(lvKvizovi, "Dodaj kviz"));
     }
-
-    /*
-    private void popuniKategorije() {
-        kategorije.add(new Kategorija("Sport", "CSPO1"));
-        kategorije.add(new Kategorija("Igre", "CIGR2"));
-        kategorije.add(new Kategorija("Matematika","CMAT3"));
-        kategorije.add(new Kategorija("Historija","CHIS4"));
-        kategorije.add(new Kategorija("Geografija","CGEO5"));
-
-    }
-
-    private void popuniKvizove() {
-        ArrayList<Pitanje> pitanja = new ArrayList<>();
-        pitanja.add(new Pitanje("Barcelona", "Barcelona klub iz?", "Spanija"));
-        pitanja.get(0).getOdgovori().add("Spanija");
-        pitanja.get(0).getOdgovori().add("Francuska");
-        pitanja.get(0).getOdgovori().add("Italija");
-
-
-        ArrayList<Pitanje> pitanja2 = new ArrayList<>();
-        pitanja2.add(new Pitanje("Pacman", "Koje boje?", "Žuta"));
-        pitanja2.get(0).getOdgovori().add("Žuta");
-        pitanja2.get(0).getOdgovori().add("Zelena");
-        pitanja2.get(0).getOdgovori().add("Crvena");
-
-
-        Kviz k = new Kviz("Fudbal", pitanja, kategorije.get(1));
-        kvizovi.add(k);
-
-        Kviz k2 = new Kviz("Pacman", pitanja2, kategorije.get(2));
-        kvizovi.add(k2);
-    }*/
 }

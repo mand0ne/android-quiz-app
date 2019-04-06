@@ -25,16 +25,20 @@ import ba.unsa.etf.rma.klase.Kviz;
 import ba.unsa.etf.rma.klase.NDSpinner;
 import ba.unsa.etf.rma.klase.Pitanje;
 
+import static ba.unsa.etf.rma.aktivnosti.KvizoviAkt.PROMIJENI_KVIZ;
+
 public class DodajKvizAkt extends AppCompatActivity {
 
-    private ListView lvDodanaPitanja, lvMogucaPitanja;
+    static final int DODAJ_PITANJE = 1200;
+    static final int DODAJ_KATEGORIJU = 1300;
+
+    private ListView lvDodanaPitanja;
     private View ldFooterView;
     private NDSpinner spKategorije;
-    private Button btnDodajKviz;
     private EditText etNaziv;
 
-    private ArrayList<Kviz> kvizovi;
-    private ArrayList<Kategorija> kategorije;
+    private ArrayList<Kviz> kvizovi = new ArrayList<>();
+    private ArrayList<Kategorija> kategorije = new ArrayList<>();
 
     private ArrayList<Pitanje> dodana = new ArrayList<>();
     private ArrayList<Pitanje> moguca = new ArrayList<>();
@@ -44,7 +48,7 @@ public class DodajKvizAkt extends AppCompatActivity {
 
     private Kviz trenutniKviz;
 
-    ArrayAdapter<Kategorija> sAdapter;
+    private ArrayAdapter<Kategorija> sAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,9 +63,9 @@ public class DodajKvizAkt extends AppCompatActivity {
         kategorije = intent.getParcelableArrayListExtra("kategorije");
 
         lvDodanaPitanja = findViewById(R.id.lvDodanaPitanja);
-        lvMogucaPitanja = findViewById(R.id.lvMogucaPitanja);
+        ListView lvMogucaPitanja = findViewById(R.id.lvMogucaPitanja);
         spKategorije = findViewById(R.id.spKategorije);
-        btnDodajKviz = findViewById(R.id.btnDodajKviz);
+        Button btnDodajKviz = findViewById(R.id.btnDodajKviz);
         etNaziv = findViewById(R.id.etNaziv);
 
         trenutniKviz = intent.getParcelableExtra("kviz");
@@ -69,7 +73,7 @@ public class DodajKvizAkt extends AppCompatActivity {
         if (trenutniKviz == null)
             trenutniKviz = new Kviz(null, null);
 
-        sAdapter = new ArrayAdapter<Kategorija>(this, android.R.layout.simple_spinner_item, kategorije);
+        sAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, kategorije);
         sAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         kategorije.add(new Kategorija("Dodaj kategoriju", "-2"));
         spKategorije.setAdapter(sAdapter);
@@ -83,7 +87,7 @@ public class DodajKvizAkt extends AppCompatActivity {
         adapterMoguca = new ArrayAdapter<>(this, R.layout.element_liste, R.id.naziv, moguca);
         lvMogucaPitanja.setAdapter(adapterMoguca);
 
-        if (intent.getIntExtra("requestCode", 0) == 2) {
+        if (intent.getIntExtra("requestCode", 0) == PROMIJENI_KVIZ) {
             spKategorije.setSelection(sAdapter.getPosition(trenutniKviz.getKategorija()));
             etNaziv.setText(trenutniKviz.getNaziv());
         }
@@ -92,16 +96,20 @@ public class DodajKvizAkt extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (validanUnos()) {
-                    Intent i = new Intent();
-                    trenutniKviz.setNaziv(etNaziv.getText().toString());
-                    trenutniKviz.setKategorija((Kategorija) spKategorije.getSelectedItem());
-                    trenutniKviz.setPitanja(dodana);
-                    i.putExtra("kviz", trenutniKviz);
-                    i.putExtra("index", intent.getIntExtra("index", 0));
-                    setResult(RESULT_OK, i);
-                    finish();
+                    if (intent.getIntExtra("requestCode", 0 ) == PROMIJENI_KVIZ || !postojiKviz()) {
+                        Intent i = new Intent();
+                        trenutniKviz.setNaziv(etNaziv.getText().toString());
+                        trenutniKviz.setKategorija((Kategorija) spKategorije.getSelectedItem());
+                        trenutniKviz.setPitanja(dodana);
+                        i.putExtra("kviz", trenutniKviz);
+                        i.putExtra("index", intent.getIntExtra("index", 0));
+                        i.putParcelableArrayListExtra("kategorije", kategorije);
+                        setResult(RESULT_OK, i);
+                        finish();
+                    } else
+                        Toast.makeText(DodajKvizAkt.this, "Kviz sa navedenim imenom već postoji!", Toast.LENGTH_SHORT).show();
                 } else {
-                    if (etNaziv.getText().toString().trim().equalsIgnoreCase(""))
+                    if (etNaziv.getText().length() == 0)
                         etNaziv.setError("Unesite naziv kviza!");
 
                     if (spKategorije.getSelectedItemPosition() == kategorije.size() - 1) {
@@ -120,8 +128,9 @@ public class DodajKvizAkt extends AppCompatActivity {
                                             @Override
                                             public void onClick(View v) {
                                                 Intent intent = new Intent(DodajKvizAkt.this, DodajPitanjeAkt.class);
-                                                intent.putExtra("kviz", trenutniKviz);
-                                                startActivityForResult(intent, 4);
+                                                intent.putParcelableArrayListExtra("dodana", dodana);
+                                                intent.putParcelableArrayListExtra("moguca", moguca);
+                                                startActivityForResult(intent, DODAJ_PITANJE);
                                             }
                                         }
         );
@@ -140,13 +149,15 @@ public class DodajKvizAkt extends AppCompatActivity {
             }
         });
 
+
+        // Klik na zadnji element spinnera za dodavanje kategorije
         spKategorije.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (position == kategorije.size() - 1) {
                     Intent i = new Intent(DodajKvizAkt.this, DodajKategorijuAkt.class);
-                    i.putExtra("kviz", trenutniKviz);
-                    startActivityForResult(i, 5);
+                    i.putParcelableArrayListExtra("kategorije", kategorije);
+                    startActivityForResult(i, DODAJ_KATEGORIJU);
                 }
             }
 
@@ -183,30 +194,32 @@ public class DodajKvizAkt extends AppCompatActivity {
 
     private boolean validanUnos() {
         return (etNaziv.getText() != null && etNaziv.getText().length() != 0
-                && spKategorije.getSelectedItemPosition() != kategorije.size() - 1
-                && !postojiKviz());
+                && spKategorije.getSelectedItemPosition() != kategorije.size() - 1);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (resultCode == RESULT_OK) {
             if (data != null) {
-                trenutniKviz = data.getParcelableExtra("kviz");
 
-                if (requestCode == 4) {
-                    dodana = new ArrayList<>(trenutniKviz.getPitanja());
-                    adapterDodana.setList(dodana);
+                if (requestCode == DODAJ_PITANJE) {
+                    Pitanje novoPitanje = data.getParcelableExtra("novoPitanje");
+                    dodana.add(novoPitanje);
+                    // trenutniKviz.setPitanja(dodana);
                     adapterDodana.notifyDataSetChanged();
                 }
 
-                if (requestCode == 5) {
-                    kategorije.add(kategorije.size() - 1, trenutniKviz.getKategorija());
+                if (requestCode == DODAJ_KATEGORIJU) {
+                    Kategorija novaKategorija = data.getParcelableExtra("novaKategorija");
+                    kategorije.add(kategorije.size() - 1, novaKategorija);
+                    // trenutniKviz.setKategorija(novaKategorija);
                     sAdapter.notifyDataSetChanged();
                     spKategorije.setSelection(kategorije.size() - 2);
                 }
             }
         }
     }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -218,7 +231,11 @@ public class DodajKvizAkt extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
+        Intent i = new Intent();
+        i.putParcelableArrayListExtra("kategorije", kategorije);
+        setResult(RESULT_CANCELED, i);
+        finish();
     }
+
 }
 

@@ -1,16 +1,17 @@
 <resources>
-    <string name="app_name">RMA - Kvizovi</string>
+    <string name="app_name">RMA - Quiz App</string>
     <string name="QuizIcon">Quiz Icon</string>
     <string name="AddIcon">Add Icon</string>
     <string name="kvizButton">Dodaj/Izmijeni kviz</string>
     <string name="pitanjaLabel">Pitanja u kvizu</string>
     <string name="pitanjaLabel2">Moguca pitanja</string>
-    <string name="etNazivKviza">Naziv kviza</string>
-    <string name="etQuiz" />
+    <string name="etNazivKviza">Naziv kviza - INPUT</string>
     <string name="labelOdgovori">Odgovori</string>
     <string name="btnDodajOdgovor">Dodaj</string>
     <string name="btnDodajTacan">Dodaj tacan</string>
     <string name="btnDodajPitanje">Spasi pitanje</string>
     <string name="saveCategory">Spasi kategoriju</string>
     <string name="addCategoryIcon">Dodaj ikonu</string>
+    <string name="etNazivPitanja">Naziv pitanja - INPUT</string>
+    <string name="etOdgovor">Odgovor</string>
 </resources>

@@ -2,9 +2,6 @@ package ba.unsa.etf.rma.klase;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.widget.AdapterView;
-import android.widget.Spinner;
-
 import java.util.Objects;
 
 public class NDSpinner extends android.support.v7.widget.AppCompatSpinner {

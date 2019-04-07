@@ -10,7 +10,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Spinner;
+
 import java.util.ArrayList;
+
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.klase.CustomAdapter;
 import ba.unsa.etf.rma.klase.Kategorija;
@@ -69,7 +71,7 @@ public class KvizoviAkt extends AppCompatActivity {
                 Intent intent = new Intent(context, DodajKvizAkt.class);
                 intent.putParcelableArrayListExtra("kategorije", kategorije);
                 intent.putParcelableArrayListExtra("kvizovi", sviKvizovi);
-                intent.putExtra("kviz", (Kviz)parent.getItemAtPosition(position));
+                intent.putExtra("kviz", (Kviz) parent.getItemAtPosition(position));
                 intent.putExtra("requestCode", PROMIJENI_KVIZ);
                 startActivityForResult(intent, PROMIJENI_KVIZ);
             }
@@ -84,9 +86,7 @@ public class KvizoviAkt extends AppCompatActivity {
                     if (ka.getId().equals("-1")) {
                         prikazaniKvizovi.clear();
                         prikazaniKvizovi.addAll(sviKvizovi);
-                    }
-
-                    else {
+                    } else {
                         prikazaniKvizovi.clear();
                         for (Kviz k : sviKvizovi)
                             if (k.getKategorija() != null && k.getKategorija().getNaziv().equals(ka.getNaziv())
@@ -111,30 +111,28 @@ public class KvizoviAkt extends AppCompatActivity {
         if (resultCode == RESULT_OK) {
             if (data != null) {
                 Kviz novi = data.getParcelableExtra("kviz");
-                if (requestCode == PROMIJENI_KVIZ){
+                if (requestCode == PROMIJENI_KVIZ) {
                     int index = dajIndexKviza(data.getStringExtra("staroImeKviza"));
                     sviKvizovi.set(index, novi);
-                }
-                else if (requestCode == DODAJ_KVIZ)
+                } else if (requestCode == DODAJ_KVIZ)
                     sviKvizovi.add(novi);
 
                 spPostojeceKategorije.setSelection(spPostojeceKategorije.getSelectedItemPosition());
                 azurirajKategorije(data);
             }
-        }
-        else if(resultCode == RESULT_CANCELED)
-             azurirajKategorije(data);
+        } else if (resultCode == RESULT_CANCELED)
+            azurirajKategorije(data);
     }
 
     private int dajIndexKviza(String staroImeKviza) {
-        for(int i = 0; i < sviKvizovi.size(); i++)
-            if(sviKvizovi.get(i).getNaziv().equals(staroImeKviza))
+        for (int i = 0; i < sviKvizovi.size(); i++)
+            if (sviKvizovi.get(i).getNaziv().equals(staroImeKviza))
                 return i;
 
         return sviKvizovi.size() - 1;
     }
 
-    public void azurirajKategorije(@Nullable Intent data){
+    public void azurirajKategorije(@Nullable Intent data) {
         kategorije.clear();
         assert data != null;
         kategorije.addAll(data.<Kategorija>getParcelableArrayListExtra("kategorije"));

@@ -7,7 +7,7 @@ public class Kategorija implements Parcelable {
     private String naziv;
     private String id;
 
-    public Kategorija(String naziv, String id){
+    public Kategorija(String naziv, String id) {
         this.naziv = naziv;
         this.id = id;
     }
@@ -32,10 +32,10 @@ public class Kategorija implements Parcelable {
 
     @Override
     public boolean equals(Object obj) {
-        if(getClass() != obj.getClass())
+        if (getClass() != obj.getClass())
             return false;
 
-        return this.naziv.equals(((Kategorija)obj).naziv) && this.id.equals(((Kategorija)obj).id);
+        return this.naziv.equals(((Kategorija) obj).naziv) && this.id.equals(((Kategorija) obj).id);
     }
 
     public void setId(String id) {

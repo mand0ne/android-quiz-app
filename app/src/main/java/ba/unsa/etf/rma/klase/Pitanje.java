@@ -52,18 +52,18 @@ public class Pitanje implements Parcelable {
         this.tacan = tacan;
     }
 
-    public ArrayList<String> dajRandomOdgovore(){
+    public ArrayList<String> dajRandomOdgovore() {
         ArrayList<String> randomOdgovori = new ArrayList<>();
         Collections.copy(randomOdgovori, odgovori);
         Collections.shuffle(randomOdgovori);
         return randomOdgovori;
     }
 
-    public boolean nePostojiOdgovor(String odgovor){
+    public boolean nePostojiOdgovor(String odgovor) {
         return !odgovori.contains(odgovor);
     }
 
-    public void dodajOdgovor(String odgovor){
+    public void dodajOdgovor(String odgovor) {
         odgovori.add(odgovor);
     }
 

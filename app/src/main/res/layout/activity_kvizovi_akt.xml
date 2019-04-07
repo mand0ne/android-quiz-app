@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".aktivnosti.KvizoviAkt">
 
-    <Spinner
+    <ba.unsa.etf.rma.klase.NDSpinner
         android:id="@+id/spPostojeceKategorije"
         style="@style/Widget.AppCompat.Spinner.Underlined"
         android:backgroundTint="#ff000000"

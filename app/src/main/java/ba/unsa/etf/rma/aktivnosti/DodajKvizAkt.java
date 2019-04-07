@@ -47,6 +47,7 @@ public class DodajKvizAkt extends AppCompatActivity {
     private ArrayAdapter<Pitanje> adapterMoguca;
 
     private Kviz trenutniKviz;
+    private String staroImeKviza = null;
 
     private ArrayAdapter<Kategorija> sAdapter;
 
@@ -88,6 +89,7 @@ public class DodajKvizAkt extends AppCompatActivity {
         lvMogucaPitanja.setAdapter(adapterMoguca);
 
         if (intent.getIntExtra("requestCode", 0) == PROMIJENI_KVIZ) {
+            staroImeKviza = trenutniKviz.getNaziv();
             spKategorije.setSelection(sAdapter.getPosition(trenutniKviz.getKategorija()));
             etNaziv.setText(trenutniKviz.getNaziv());
         }
@@ -96,13 +98,15 @@ public class DodajKvizAkt extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (validanUnos()) {
-                    if (intent.getIntExtra("requestCode", 0 ) == PROMIJENI_KVIZ || !postojiKviz()) {
+                    if (!postojiKviz()) {
                         Intent i = new Intent();
                         trenutniKviz.setNaziv(etNaziv.getText().toString());
                         trenutniKviz.setKategorija((Kategorija) spKategorije.getSelectedItem());
                         trenutniKviz.setPitanja(dodana);
                         i.putExtra("kviz", trenutniKviz);
-                        i.putExtra("index", intent.getIntExtra("index", 0));
+                        if (intent.getIntExtra("requestCode", 0) == PROMIJENI_KVIZ)
+                            i.putExtra("staroImeKviza", staroImeKviza);
+
                         i.putParcelableArrayListExtra("kategorije", kategorije);
                         setResult(RESULT_OK, i);
                         finish();
@@ -116,8 +120,7 @@ public class DodajKvizAkt extends AppCompatActivity {
                         TextView errorText = (TextView) spKategorije.getSelectedView();
                         errorText.setError("");
                         errorText.setTextColor(Color.RED);
-                        spKategorije.setSelection(0);
-                        Toast.makeText(DodajKvizAkt.this, "Izaberite/Unesite kategoriju", Toast.LENGTH_SHORT).show();
+                        errorText.setText(getString(R.string.categoryError));
                     }
                 }
             }
@@ -184,10 +187,15 @@ public class DodajKvizAkt extends AppCompatActivity {
     }
 
     private boolean postojiKviz() {
+        boolean changeMode = getIntent().getIntExtra("requestCode", 0) == PROMIJENI_KVIZ;
         String naziv = etNaziv.getText().toString();
-        for (Kviz k : kvizovi)
-            if (k.getNaziv().equalsIgnoreCase(naziv))
-                return true;
+
+        if (!changeMode || !naziv.equalsIgnoreCase(staroImeKviza))
+            for (Kviz k : kvizovi)
+                if (k.getNaziv().equalsIgnoreCase(naziv)) {
+                    etNaziv.setError("Kviz sa istim imenom već postoji!");
+                    return true;
+                }
 
         return false;
     }

@@ -15,6 +15,7 @@ import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.klase.CustomAdapter;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.Kviz;
+import ba.unsa.etf.rma.klase.NDSpinner;
 
 public class KvizoviAkt extends AppCompatActivity {
 
@@ -23,11 +24,12 @@ public class KvizoviAkt extends AppCompatActivity {
 
     private Context context;
     private ListView lvKvizovi;
-    private Spinner spPostojeceKategorije;
+    private NDSpinner spPostojeceKategorije;
     private View lvFooterView;
 
     private ArrayList<Kategorija> kategorije = new ArrayList<>();
-    private ArrayList<Kviz> kvizovi = new ArrayList<>();
+    private ArrayList<Kviz> sviKvizovi = new ArrayList<>();
+    private ArrayList<Kviz> prikazaniKvizovi = new ArrayList<>();
 
     private ArrayAdapter<Kategorija> sAdapter = null;
     private CustomAdapter adapter = null;
@@ -36,7 +38,7 @@ public class KvizoviAkt extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_kvizovi_akt);
-        context = this;
+        context = KvizoviAkt.this;
 
         lvKvizovi = findViewById(R.id.lvKvizovi);
         spPostojeceKategorije = findViewById(R.id.spPostojeceKategorije);
@@ -52,9 +54,9 @@ public class KvizoviAkt extends AppCompatActivity {
                                             @Override
                                             public void onClick(View v) {
                                                 Intent intent = new Intent(context, DodajKvizAkt.class);
-                                                intent.putExtra("requestCode", DODAJ_KVIZ);
                                                 intent.putParcelableArrayListExtra("kategorije", kategorije);
-                                                intent.putParcelableArrayListExtra("kvizovi", kvizovi);
+                                                intent.putParcelableArrayListExtra("kvizovi", sviKvizovi);
+                                                intent.putExtra("requestCode", DODAJ_KVIZ);
                                                 startActivityForResult(intent, DODAJ_KVIZ);
                                             }
                                         }
@@ -66,13 +68,8 @@ public class KvizoviAkt extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(context, DodajKvizAkt.class);
                 intent.putParcelableArrayListExtra("kategorije", kategorije);
-                intent.putParcelableArrayListExtra("kvizovi", kvizovi);
-                intent.putExtra("kviz", kvizovi.get(position));
-
-                // Zapamtiti TACNU poziciju u listView-u
-                // koja se moze poremetiti zbog recikliranja u getView metodi.
-                intent.putExtra("index", position);
-
+                intent.putParcelableArrayListExtra("kvizovi", sviKvizovi);
+                intent.putExtra("kviz", (Kviz)parent.getItemAtPosition(position));
                 intent.putExtra("requestCode", PROMIJENI_KVIZ);
                 startActivityForResult(intent, PROMIJENI_KVIZ);
             }
@@ -84,17 +81,17 @@ public class KvizoviAkt extends AppCompatActivity {
                 Kategorija ka = (Kategorija) spPostojeceKategorije.getSelectedItem();
 
                 if (ka != null) {
-                    if (ka.getId().equals("-1"))
-                        adapter.setList(kvizovi);
+                    if (ka.getId().equals("-1")) {
+                        prikazaniKvizovi.clear();
+                        prikazaniKvizovi.addAll(sviKvizovi);
+                    }
 
                     else {
-                        ArrayList<Kviz> newKvizovi = new ArrayList<>();
-                        for (Kviz k : kvizovi)
+                        prikazaniKvizovi.clear();
+                        for (Kviz k : sviKvizovi)
                             if (k.getKategorija() != null && k.getKategorija().getNaziv().equals(ka.getNaziv())
                                     || ka.getId().equals("-1"))
-                                newKvizovi.add(k);
-
-                        adapter.setList(newKvizovi);
+                                prikazaniKvizovi.add(k);
                     }
 
                     adapter.notifyDataSetChanged();
@@ -114,18 +111,27 @@ public class KvizoviAkt extends AppCompatActivity {
         if (resultCode == RESULT_OK) {
             if (data != null) {
                 Kviz novi = data.getParcelableExtra("kviz");
-                if (requestCode == PROMIJENI_KVIZ)
-                    kvizovi.set(data.getIntExtra("index", 0), novi);
+                if (requestCode == PROMIJENI_KVIZ){
+                    int index = dajIndexKviza(data.getStringExtra("staroImeKviza"));
+                    sviKvizovi.set(index, novi);
+                }
                 else if (requestCode == DODAJ_KVIZ)
-                    kvizovi.add(novi);
+                    sviKvizovi.add(novi);
 
+                spPostojeceKategorije.setSelection(spPostojeceKategorije.getSelectedItemPosition());
                 azurirajKategorije(data);
             }
-
-            adapter.notifyDataSetChanged();
         }
         else if(resultCode == RESULT_CANCELED)
              azurirajKategorije(data);
+    }
+
+    private int dajIndexKviza(String staroImeKviza) {
+        for(int i = 0; i < sviKvizovi.size(); i++)
+            if(sviKvizovi.get(i).getNaziv().equals(staroImeKviza))
+                return i;
+
+        return sviKvizovi.size() - 1;
     }
 
     public void azurirajKategorije(@Nullable Intent data){
@@ -141,7 +147,7 @@ public class KvizoviAkt extends AppCompatActivity {
         kategorije.add(new Kategorija("Svi", "-1"));
 
         // Za ListView
-        adapter = new CustomAdapter(context, kvizovi, getResources());
+        adapter = new CustomAdapter(context, prikazaniKvizovi, getResources());
         lvKvizovi.setAdapter(adapter);
         lvKvizovi.addFooterView(lvFooterView = adapter.getFooterView(lvKvizovi, "Dodaj kviz"));
     }

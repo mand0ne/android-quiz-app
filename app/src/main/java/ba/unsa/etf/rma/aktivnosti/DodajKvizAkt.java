@@ -1,11 +1,9 @@
 package ba.unsa.etf.rma.aktivnosti;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -21,11 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.apache.commons.lang3.StringUtils;
-
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -43,8 +37,8 @@ import static ba.unsa.etf.rma.aktivnosti.KvizoviAkt.PROMIJENI_KVIZ;
 
 public class DodajKvizAkt extends AppCompatActivity {
 
-    static final int DODAJ_PITANJE = 1200;
-    static final int DODAJ_KATEGORIJU = 1300;
+    static final int DODAJ_PITANJE = 40;
+    static final int DODAJ_KATEGORIJU = 41;
     private static final int READ_REQUEST_CODE = 42;
 
     private ListView lvDodanaPitanja;
@@ -256,22 +250,21 @@ public class DodajKvizAkt extends AppCompatActivity {
 
     ArrayList<String> loadImportIntoArray(Uri uri) throws IOException {
         InputStream inputStream = getContentResolver().openInputStream(uri);
-        if (inputStream == null) 
-                return null;
-        
+        if (inputStream == null)
+            return null;
+
         BufferedReader bReader = new BufferedReader(new InputStreamReader(inputStream));
-        
+
         ArrayList<String> quizData = new ArrayList<>();
 
         String lineInFile;
-        
+
         while ((lineInFile = bReader.readLine()) != null)
             quizData.add(lineInFile);
-        
+
         inputStream.close();
         return quizData;
     }
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -311,7 +304,7 @@ public class DodajKvizAkt extends AppCompatActivity {
     private void validateImport(ArrayList<String> importovanKviz) {
 
         if (importovanKviz.isEmpty()) {
-            throwAlert("Datoteka kviza kojeg importujete nema ispravan format!");
+            throwAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
             return;
         }
 
@@ -320,32 +313,29 @@ public class DodajKvizAkt extends AppCompatActivity {
         ArrayList<Pitanje> importovanaPitanja = new ArrayList<>();
 
         if (StringUtils.countMatches(kvizPodaci, ',') != 2) {
-            throwAlert("Datoteka kviza kojeg importujete nema ispravan format!");
+            throwAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
             return;
         }
 
         StringTokenizer razdvajac = new StringTokenizer(kvizPodaci, ",");
 
         String imeKviza = razdvajac.nextToken();
-        String nazivKategorijeKviza = razdvajac.nextToken();;
+        String nazivKategorijeKviza = razdvajac.nextToken();
+
         int brojPitanjaKviza = Integer.parseInt(razdvajac.nextToken());
 
-
         for (Kviz k : kvizovi)
-            if (k.getNaziv().equals(imeKviza)){
+            if (k.getNaziv().equals(imeKviza)) {
                 throwAlert("Kviz kojeg importujete već postoji!");
                 return;
             }
 
-
         for (Kategorija k : kategorije)
-            if (k.getNaziv().equals(nazivKategorijeKviza)) {
+            if (k.getNaziv().equals(nazivKategorijeKviza))
                 kategorijaKviza = k;
-            }
 
         if (kategorijaKviza == null)
-            kategorijaKviza = new Kategorija(nazivKategorijeKviza, "-1");
-
+            kategorijaKviza = new Kategorija(nazivKategorijeKviza, "-3");
 
         if (brojPitanjaKviza != importovanKviz.size() - 1) {
             throwAlert("Kviz kojeg imporujete ima neispravan broj pitanja!");
@@ -353,74 +343,85 @@ public class DodajKvizAkt extends AppCompatActivity {
         }
 
         for (int j = 1; j < importovanKviz.size(); j++) {
-            String pitanjeInfo = importovanKviz.get(j);
+            String pitanje = importovanKviz.get(j);
 
-            if (pitanjeInfo.isEmpty()) {
+            if (pitanje.isEmpty() || StringUtils.countMatches(pitanje, ',') < 3) {
                 throwAlert("Datoteka kviza kojeg importujete nema ispravan format!");
                 return;
             }
 
-            StringTokenizer tokenizerPitanja = new StringTokenizer(pitanjeInfo, ",");
+            StringTokenizer razdvajacPitanja = new StringTokenizer(pitanje, ",");
 
-            int k = 0;
-            String nazivPitanja = "";
-            int brojOdgovora = -1, indeksTacnog = -1;
+            String nazivPitanja = razdvajacPitanja.nextToken();
+            int brojOdgovora = Integer.parseInt(razdvajacPitanja.nextToken());
+            int indexTacnogOdgovora = Integer.parseInt(razdvajacPitanja.nextToken());
 
             ArrayList<String> odgovori = new ArrayList<>();
 
-            while (tokenizerPitanja.hasMoreTokens()) {
-                if (k == 0)
-                    nazivPitanja = tokenizerPitanja.nextToken();
-                if (k == 1)
-                        brojOdgovora = Integer.parseInt(tokenizerPitanja.nextToken());
-                if (k == 2)
-                        indeksTacnog = Integer.parseInt(tokenizerPitanja.nextToken());
+            while (razdvajacPitanja.hasMoreTokens()) {
+                String odgovor = razdvajacPitanja.nextToken();
 
-                if (k > 2) {
-                    String odgovor = tokenizerPitanja.nextToken();
-
-                    for (String o : odgovori) {
-                        if (odgovor.equals(o))
-                            throwAlert("Kviz kojeg importujete nije ispravan postoji ponavljanje odgovora!");
+                for (String o : odgovori)
+                    if (odgovor.equals(o)) {
+                        throwAlert("U kvizu kojeg importujete postoji pitanje sa istim odgovorima!");
+                        return;
                     }
 
-                    odgovori.add(odgovor);
+                odgovori.add(odgovor);
+            }
+
+            for (Pitanje p : importovanaPitanja)
+                if (p.getNaziv().equals(nazivPitanja)) {
+                    throwAlert("U kvizu kojeg importujete postoji više pitanja sa istim nazivom!");
+                    return;
                 }
 
-                k++;
-            }
-
-            for (Pitanje p : importovanaPitanja) {
-                if (p.getNaziv().equals(nazivPitanja))
-                    throwAlert("Kviz nije ispravan postoje dva pitanja sa istim nazivom!");
-            }
-
-            if (brojOdgovora != odgovori.size() || brojOdgovora == 0)
+            if (brojOdgovora == 0 || brojOdgovora != odgovori.size()) {
                 throwAlert("Kviz kojeg importujete ima neispravan broj odgovora!");
+                return;
+            }
 
-            if (indeksTacnog < 0 || indeksTacnog >= odgovori.size())
+            if (indexTacnogOdgovora < 0 || indexTacnogOdgovora >= odgovori.size()) {
                 throwAlert("Kviz kojeg importujete ima neispravan index tačnog odgovora!");
+                return;
+            }
 
-            Pitanje p = new Pitanje(nazivPitanja, nazivPitanja, odgovori.get(indeksTacnog));
+            Pitanje p = new Pitanje(nazivPitanja, nazivPitanja, odgovori.get(indexTacnogOdgovora));
             p.setOdgovori(odgovori);
-
             importovanaPitanja.add(p);
         }
 
-
         etNaziv.setText(imeKviza);
-        kategorije.add(kategorijaKviza);
+
+        boolean postojiKategorija = false;
+        int indexKategorijeSpiner = 0;
+        for (int i = 0; i<kategorije.size()-1; i++) {
+            Kategorija ka = kategorije.get(i);
+            if (ka.getNaziv().equals(nazivKategorijeKviza)){
+                indexKategorijeSpiner = i;
+                kategorijaKviza = ka;
+                postojiKategorija = true;
+                break;
+            }
+        }
+
+        if(!postojiKategorija){
+            kategorije.add(kategorije.size() - 1, kategorijaKviza);
+            indexKategorijeSpiner = kategorije.size() - 2;
+        }
+
+        sAdapter.notifyDataSetChanged();
+        spKategorije.setSelection(indexKategorijeSpiner);
+        dodana.clear();
         dodana.addAll(importovanaPitanja);
         adapterDodana.notifyDataSetChanged();
     }
 
-    
     private void throwAlert(String poruka) {
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
         alertDialog.setMessage(poruka);
         alertDialog.create();
         alertDialog.show();
     }
-    
 }
 

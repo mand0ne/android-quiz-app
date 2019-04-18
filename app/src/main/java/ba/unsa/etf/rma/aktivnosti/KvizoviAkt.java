@@ -21,8 +21,8 @@ import ba.unsa.etf.rma.klase.NDSpinner;
 
 public class KvizoviAkt extends AppCompatActivity {
 
-    static final int DODAJ_KVIZ = 1100;
-    static final int PROMIJENI_KVIZ = 2100;
+    static final int DODAJ_KVIZ = 30;
+    static final int PROMIJENI_KVIZ = 31;
 
     private Context context;
     private ListView lvKvizovi;

@@ -62,6 +62,9 @@ public class CustomAdapter extends ArrayAdapter<Object> {
                     if (trenutniKviz.getKategorija().getId().equals("-1"))
                         image.setImageResource(res.
                                 getIdentifier("ba.unsa.etf.rma:drawable/quizico", null, null));
+                    else if(trenutniKviz.getKategorija().getId().equals("-3"))
+                        image.setImageResource(res.
+                                getIdentifier("ba.unsa.etf.rma:drawable/undefinedquiz", null, null));
                     else
                         image.setImageDrawable(iconHelper.
                                 getIcon(Integer.valueOf(trenutniKviz.getKategorija().getId())).getDrawable(context));

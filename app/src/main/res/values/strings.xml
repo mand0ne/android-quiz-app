@@ -15,4 +15,5 @@
     <string name="etNazivPitanja">Naziv pitanja - INPUT</string>
     <string name="etOdgovor">Odgovor</string>
     <string name="categoryError">Izaberite/Unesite kategoriju!</string>
+    <string name="btnImportKviz">Importuj kviz</string>
 </resources>

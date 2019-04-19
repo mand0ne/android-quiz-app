@@ -4,4 +4,6 @@
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D8671B</color>
     <color name="colorButton">#069794</color>
+    <color name="crvena">#FF3030</color>
+    <color name="zelena">#7FFF00</color>
 </resources>

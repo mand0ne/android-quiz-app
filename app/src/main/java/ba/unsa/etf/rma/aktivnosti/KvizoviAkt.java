@@ -23,6 +23,7 @@ public class KvizoviAkt extends AppCompatActivity {
 
     static final int DODAJ_KVIZ = 30;
     static final int PROMIJENI_KVIZ = 31;
+    static final int IGRAJ_KVIZ = 32;
 
     private Context context;
     private ListView lvKvizovi;
@@ -65,15 +66,26 @@ public class KvizoviAkt extends AppCompatActivity {
         );
 
         // Klik na kviz za uredivanje
-        lvKvizovi.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        lvKvizovi.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(context, DodajKvizAkt.class);
                 intent.putParcelableArrayListExtra("kategorije", kategorije);
                 intent.putParcelableArrayListExtra("kvizovi", sviKvizovi);
                 intent.putExtra("kviz", (Kviz) parent.getItemAtPosition(position));
                 intent.putExtra("requestCode", PROMIJENI_KVIZ);
                 startActivityForResult(intent, PROMIJENI_KVIZ);
+
+                return true;
+            }
+        });
+
+        lvKvizovi.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(context, IgrajKvizAkt.class);
+                intent.putExtra("kviz", (Kviz) parent.getItemAtPosition(position));
+                startActivityForResult(intent, IGRAJ_KVIZ);
             }
         });
 

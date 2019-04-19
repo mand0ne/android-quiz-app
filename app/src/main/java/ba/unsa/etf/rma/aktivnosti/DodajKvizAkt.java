@@ -2,6 +2,7 @@ package ba.unsa.etf.rma.aktivnosti;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
 import android.support.annotation.Nullable;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
 import ba.unsa.etf.rma.R;
@@ -67,32 +69,32 @@ public class DodajKvizAkt extends AppCompatActivity {
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 
-        final Intent intent = getIntent();
-
-        kvizovi = intent.getParcelableArrayListExtra("kvizovi");
-        kategorije = intent.getParcelableArrayListExtra("kategorije");
-
         lvDodanaPitanja = findViewById(R.id.lvDodanaPitanja);
         ListView lvMogucaPitanja = findViewById(R.id.lvMogucaPitanja);
         spKategorije = findViewById(R.id.spKategorije);
         Button btnDodajKviz = findViewById(R.id.btnDodajKviz);
         etNaziv = findViewById(R.id.etNaziv);
 
+        final Intent intent = getIntent();
+
+        kvizovi = intent.getParcelableArrayListExtra("kvizovi");
+        kategorije = intent.getParcelableArrayListExtra("kategorije");
         trenutniKviz = intent.getParcelableExtra("kviz");
 
         if (trenutniKviz == null)
             trenutniKviz = new Kviz(null, null);
 
+        kategorije.add(new Kategorija("Dodaj kategoriju", "-2"));
+
         sAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, kategorije);
         sAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        kategorije.add(new Kategorija("Dodaj kategoriju", "-2"));
         spKategorije.setAdapter(sAdapter);
 
-        initialize();
 
         dodana = new ArrayList<>(trenutniKviz.getPitanja());
         adapterDodana = new CustomAdapter(this, dodana, getResources());
         lvDodanaPitanja.setAdapter(adapterDodana);
+        lvDodanaPitanja.addFooterView(ldFooterView = adapterDodana.getFooterView(lvDodanaPitanja, "Dodaj pitanje"));
 
         adapterMoguca = new ArrayAdapter<>(this, R.layout.element_liste, R.id.naziv, moguca);
         lvMogucaPitanja.setAdapter(adapterMoguca);
@@ -186,13 +188,6 @@ public class DodajKvizAkt extends AppCompatActivity {
         source.remove(position);
         adapterDodana.notifyDataSetChanged();
         adapterMoguca.notifyDataSetChanged();
-    }
-
-    private void initialize() {
-        adapterDodana = new CustomAdapter(this, dodana, getResources());
-
-        lvDodanaPitanja.setAdapter(adapterDodana);
-        lvDodanaPitanja.addFooterView(ldFooterView = adapterDodana.getFooterView(lvDodanaPitanja, "Dodaj pitanje"));
     }
 
     private boolean postojiKviz() {
@@ -423,5 +418,36 @@ public class DodajKvizAkt extends AppCompatActivity {
         alertDialog.create();
         alertDialog.show();
     }
+
+    /*
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putParcelableArrayList("kvizovi", kvizovi);
+        outState.putParcelableArrayList("kategorije", kategorije);
+        outState.putParcelableArrayList("dodana", dodana);
+        outState.putParcelableArrayList("moguca", moguca);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        kvizovi.clear();
+        kvizovi.addAll(Objects.requireNonNull(savedInstanceState.<Kviz>getParcelableArrayList("kvizovi")));
+        kategorije.clear();
+        kategorije.addAll(Objects.requireNonNull(savedInstanceState.<Kategorija>getParcelableArrayList("kategorije")));
+
+        dodana.clear();
+        dodana.addAll(Objects.requireNonNull(savedInstanceState.<Pitanje>getParcelableArrayList("dodana")));
+        moguca.clear();
+        moguca.addAll(Objects.requireNonNull(savedInstanceState.<Pitanje>getParcelableArrayList("moguca")));
+
+        sAdapter.notifyDataSetChanged();
+        adapterDodana.notifyDataSetChanged();
+        adapterMoguca.notifyDataSetChanged();
+    }*/
+
 }
 

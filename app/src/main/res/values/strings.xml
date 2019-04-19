@@ -16,4 +16,10 @@
     <string name="etOdgovor">Odgovor</string>
     <string name="categoryError">Izaberite/Unesite kategoriju!</string>
     <string name="btnImportKviz">Importuj kviz</string>
+
+    <string name="labelNazivKviza">Naziv kviza:</string>
+    <string name="labelBrojTacnih">Broj tačnih pitanja:</string>
+    <string name="labelBrojPreostalih">Broj preostalih pitanja:</string>
+    <string name="labelProcenatTacnih">Procenat tačnih odgovora:</string>
+    <string name="btnKraj">Završi kviz</string>
 </resources>

@@ -9,28 +9,31 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import ba.unsa.etf.rma.R;
-import ba.unsa.etf.rma.klase.Pitanje;
+import ba.unsa.etf.rma.klase.Kviz;
 import ba.unsa.etf.rma.klase.SharedViewModel;
 
 public class InformacijeFrag extends Fragment {
 
     private SharedViewModel model;
+    private Kviz trenutniKviz;
     private int brojTacnihPitanja;
     private int brojPreostalihPitanja;
     private double procenatTacnih;
-
     private TextView infNazivKviza, infBrojTacnihPitanja;
     private TextView infBrojPreostalihPitanja, infProcenatTacni;
+    private Button btnKraj;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        brojTacnihPitanja = brojPreostalihPitanja = 0;
+        trenutniKviz = (Kviz) getArguments().get("kviz");
+        brojPreostalihPitanja = trenutniKviz.getPitanja().size();
+        brojTacnihPitanja = 0;
         procenatTacnih = 0.0;
     }
 
@@ -49,11 +52,9 @@ public class InformacijeFrag extends Fragment {
         infBrojTacnihPitanja = getView().findViewById(R.id.infBrojTacnihPitanja);
         infBrojPreostalihPitanja = getView().findViewById(R.id.infBrojPreostalihPitanja);
         infProcenatTacni = getView().findViewById(R.id.infProcenatTacni);
-
-        infNazivKviza.setText("Test");
-        infBrojPreostalihPitanja.setText(brojPreostalihPitanja);
-        infBrojTacnihPitanja.setText(brojTacnihPitanja);
-        infProcenatTacni.setText(String.valueOf(procenatTacnih));
+        btnKraj = getView().findViewById(R.id.btnKraj);
+        infNazivKviza.setText(trenutniKviz.getNaziv());
+        azuriraj();
     }
 
     @Override
@@ -61,11 +62,24 @@ public class InformacijeFrag extends Fragment {
         super.onActivityCreated(savedInstanceState);
 
         model = ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
-        model.getPitanje().observe(getViewLifecycleOwner(), new Observer<Pitanje>() {
+        model.getOdgovor().observe(getViewLifecycleOwner(), new Observer<Boolean>() {
             @Override
-            public void onChanged(@Nullable Pitanje pitanje) {
-                Toast.makeText(getActivity(), "promjena", Toast.LENGTH_SHORT).show();
+            public void onChanged(@Nullable Boolean odgovor) {
+                Toast.makeText(getContext(), "USO", Toast.LENGTH_SHORT).show();
+                brojPreostalihPitanja--;
+                if(odgovor)
+                    brojTacnihPitanja++;
+
+                procenatTacnih = (double)brojTacnihPitanja / (trenutniKviz.getPitanja().size() - brojPreostalihPitanja);
+                azuriraj();
             }
         });
+
+    }
+
+    private void azuriraj(){
+        infBrojPreostalihPitanja.setText(String.valueOf(brojPreostalihPitanja));
+        infBrojTacnihPitanja.setText(String.valueOf(brojTacnihPitanja));
+        infProcenatTacni.setText(String.valueOf(Math.round(procenatTacnih*100))  + " %");
     }
 }

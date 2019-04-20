@@ -5,14 +5,14 @@ import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
 
 public class SharedViewModel extends ViewModel {
-    private final MutableLiveData<Pitanje> selected = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> odgovor = new MutableLiveData<>();
 
-    public void setPitanje(Pitanje p) {
-        selected.setValue(p);
+    public void setOdgovor(Boolean o) {
+        odgovor.setValue(o);
     }
 
-    public LiveData<Pitanje> getPitanje() {
-        return selected;
+    public LiveData<Boolean> getOdgovor() {
+        return odgovor;
     }
 }
 

@@ -54,7 +54,7 @@ public class Pitanje implements Parcelable {
 
     public ArrayList<String> dajRandomOdgovore() {
         ArrayList<String> randomOdgovori = new ArrayList<>();
-        Collections.copy(randomOdgovori, odgovori);
+        randomOdgovori.addAll(odgovori);
         Collections.shuffle(randomOdgovori);
         return randomOdgovori;
     }

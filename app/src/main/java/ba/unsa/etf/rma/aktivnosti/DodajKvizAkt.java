@@ -414,6 +414,7 @@ public class DodajKvizAkt extends AppCompatActivity {
 
     private void throwAlert(String poruka) {
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        alertDialog.setNeutralButton("U redu", null);
         alertDialog.setMessage(poruka);
         alertDialog.create();
         alertDialog.show();

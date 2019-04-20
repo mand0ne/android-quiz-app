@@ -58,7 +58,7 @@ public class DodajPitanjeAkt extends AppCompatActivity {
             @SuppressWarnings("NullableProblems")
             @Override
             public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-                View row = super.getView(position, null, parent);
+                View row = super.getView(position, convertView, parent);
 
                 if (Objects.requireNonNull(getItem(position)).equals(novoPitanje.getTacan()))
                     row.setBackgroundColor(Color.GREEN);

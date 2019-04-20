@@ -28,7 +28,8 @@ public class IgrajKvizAkt extends AppCompatActivity {
         Bundle b = new Bundle();
         b.putParcelable("kviz", trenutniKviz);
         pFrag.setArguments(b);
-        fragmentManager.beginTransaction().add(R.id.informacijePlace, pFrag).commit();
-        fragmentManager.beginTransaction().add(R.id.informacijePlace, iFrag).commit();
+        iFrag.setArguments(b);
+        fragmentManager.beginTransaction().replace(R.id.informacijePlace, iFrag).commit();
+        fragmentManager.beginTransaction().replace(R.id.pitanjePlace, pFrag).commit();
     }
 }

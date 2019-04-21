@@ -99,7 +99,7 @@ public class DodajPitanjeAkt extends AppCompatActivity {
                         novoPitanje.dodajOdgovor(odgovor);
                         novoPitanje.setTacan(odgovor);
                         btnDodajTacan.setEnabled(false);
-                        btnDodajTacan.getBackground().setColorFilter(0xFFb79d9d, PorterDuff.Mode.MULTIPLY);
+                        btnDodajTacan.getBackground().setColorFilter(0xFFB79D9D, PorterDuff.Mode.MULTIPLY);
 
                         odgovori.add(odgovor);
                         adapter.notifyDataSetChanged();
@@ -151,7 +151,7 @@ public class DodajPitanjeAkt extends AppCompatActivity {
     }
 
     boolean validanOdgovor() {
-        return etOdgovor.getText() != null && etOdgovor.getText().length() != 0;
+        return etOdgovor != null && !etOdgovor.getText().toString().isEmpty() && etOdgovor.getText() != null && etOdgovor.getText().length() != 0;
     }
 
     boolean postojiPitanje() {

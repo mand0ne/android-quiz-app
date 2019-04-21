@@ -11,13 +11,16 @@ public class Pitanje implements Parcelable {
     private String naziv;
     private String tekstPitanja;
     private ArrayList<String> odgovori = new ArrayList<>();
-    private String tacan;
+    private String tacan = null;
 
     public Pitanje(String naziv, String tekstPitanja, String tacan) {
         this.naziv = naziv;
         this.tekstPitanja = tekstPitanja;
-        odgovori.add(tacan);
-        this.tacan = tacan;
+
+        if(tacan != null){
+            odgovori.add(tacan);
+            this.tacan = tacan;
+        }
     }
 
     public String getNaziv() {
@@ -53,8 +56,7 @@ public class Pitanje implements Parcelable {
     }
 
     public ArrayList<String> dajRandomOdgovore() {
-        ArrayList<String> randomOdgovori = new ArrayList<>();
-        randomOdgovori.addAll(odgovori);
+        ArrayList<String> randomOdgovori = new ArrayList<>(odgovori);
         Collections.shuffle(randomOdgovori);
         return randomOdgovori;
     }

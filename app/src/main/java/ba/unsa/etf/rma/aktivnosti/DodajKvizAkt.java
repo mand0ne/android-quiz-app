@@ -2,7 +2,6 @@ package ba.unsa.etf.rma.aktivnosti;
 
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
 import android.support.annotation.Nullable;
@@ -18,16 +17,13 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import org.apache.commons.lang3.StringUtils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.StringTokenizer;
-
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.klase.CustomAdapter;
 import ba.unsa.etf.rma.klase.Kategorija;
@@ -43,8 +39,6 @@ public class DodajKvizAkt extends AppCompatActivity {
     static final int DODAJ_KATEGORIJU = 41;
     private static final int READ_REQUEST_CODE = 42;
 
-    private ListView lvDodanaPitanja;
-    private View ldFooterView;
     private NDSpinner spKategorije;
     private EditText etNaziv;
 
@@ -69,7 +63,7 @@ public class DodajKvizAkt extends AppCompatActivity {
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 
-        lvDodanaPitanja = findViewById(R.id.lvDodanaPitanja);
+        ListView lvDodanaPitanja = findViewById(R.id.lvDodanaPitanja);
         ListView lvMogucaPitanja = findViewById(R.id.lvMogucaPitanja);
         spKategorije = findViewById(R.id.spKategorije);
         Button btnDodajKviz = findViewById(R.id.btnDodajKviz);
@@ -94,6 +88,7 @@ public class DodajKvizAkt extends AppCompatActivity {
         dodana = new ArrayList<>(trenutniKviz.getPitanja());
         adapterDodana = new CustomAdapter(this, dodana);
         lvDodanaPitanja.setAdapter(adapterDodana);
+        View ldFooterView;
         lvDodanaPitanja.addFooterView(ldFooterView = adapterDodana.getFooterView(lvDodanaPitanja, "Dodaj pitanje"));
 
         adapterMoguca = new ArrayAdapter<>(this, R.layout.element_liste, R.id.naziv, moguca);

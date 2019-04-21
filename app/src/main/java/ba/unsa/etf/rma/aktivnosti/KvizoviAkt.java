@@ -1,9 +1,7 @@
 package ba.unsa.etf.rma.aktivnosti;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
@@ -13,22 +11,15 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Spinner;
-import android.widget.Toast;
-
 import java.util.ArrayList;
-
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.fragmenti.DetailFrag;
-import ba.unsa.etf.rma.fragmenti.InformacijeFrag;
 import ba.unsa.etf.rma.fragmenti.ListaFrag;
-import ba.unsa.etf.rma.fragmenti.PitanjeFrag;
 import ba.unsa.etf.rma.klase.CustomAdapter;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.Kviz;
 import ba.unsa.etf.rma.klase.NDSpinner;
 
-import static android.provider.MediaStore.Images.ImageColumns.ORIENTATION;
 
 public class KvizoviAkt extends AppCompatActivity {
 
@@ -69,8 +60,6 @@ public class KvizoviAkt extends AppCompatActivity {
         }
 
         if (dpwidth >= 550) {
-            FragmentManager manager = getSupportFragmentManager();
-
             Intent intent = getIntent();
             Kviz trenutniKviz = intent.getParcelableExtra("kviz");
 

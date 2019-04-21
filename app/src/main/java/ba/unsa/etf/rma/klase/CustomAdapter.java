@@ -32,10 +32,6 @@ public class CustomAdapter extends ArrayAdapter<Object> {
         this.list = list;
     }
 
-    public void setList(ArrayList<?> list) {
-        this.list = list;
-    }
-
     @Override
     public int getCount() {
         return list != null ? list.size() : 0;

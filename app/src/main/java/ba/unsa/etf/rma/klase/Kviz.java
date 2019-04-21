@@ -46,15 +46,6 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         this.kategorija = kategorija;
     }
 
-
-    public void dodajPitanje(Pitanje p) {
-        pitanja.add(p);
-    }
-
-    public boolean sadrziPitanje(Pitanje p) {
-        return pitanja.contains(p);
-    }
-
     @Override
     public boolean equals(Object obj) {
         if (getClass() != obj.getClass())

@@ -13,10 +13,8 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-
 import java.util.ArrayList;
 import java.util.Random;
-
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.klase.Kviz;
 import ba.unsa.etf.rma.klase.Pitanje;
@@ -26,10 +24,7 @@ public class PitanjeFrag extends Fragment {
 
     private TextView tekstPitanja;
     private ListView odgovoriPitanja;
-
     private SharedViewModel model;
-
-    private Kviz trenutniKviz = null;
     private ArrayList<Pitanje> kvizPitanja = new ArrayList<>();
     private Pitanje trenutnoPitanje = null;
     private ArrayList<String> odgovori = new ArrayList<>();
@@ -40,8 +35,7 @@ public class PitanjeFrag extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        trenutniKviz = (Kviz) getArguments().get("kviz");
-        kvizPitanja.addAll(trenutniKviz.getPitanja());
+        kvizPitanja.addAll(((Kviz) getArguments().getParcelable("kviz")).getPitanja());
         if (kvizPitanja.size() > 0) {
             trenutnoPitanje = kvizPitanja.remove(new Random().nextInt(kvizPitanja.size()));
             odgovori = trenutnoPitanje.dajRandomOdgovore();
@@ -50,12 +44,10 @@ public class PitanjeFrag extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_pitanje, container, false);
-
-        return view;
+        return inflater.inflate(R.layout.fragment_pitanje, container, false);
     }
 
     @Override
@@ -140,14 +132,5 @@ public class PitanjeFrag extends Fragment {
                 }
             }
         });
-    }
-
-    private void podesiBoje(final AdapterView<?> parent, final int position) {
-        parent.getChildAt(position).setBackgroundColor(getResources().getColor(R.color.crvena));
-        for (int i = 0; i < parent.getCount(); i++)
-            if (i != position && parent.getItemAtPosition(i).equals(trenutnoPitanje.getTacan())) {
-                parent.getChildAt(i).setBackgroundColor(getResources().getColor(R.color.zelena));
-                break;
-            }
     }
 }

@@ -38,6 +38,7 @@ public class GridViewAdapter extends ArrayAdapter<Kviz> {
 
         final Kviz trenutniKviz = getItem(position);
 
+        assert trenutniKviz != null;
         nazivKviza.setText(trenutniKviz.getNaziv());
 
         if (trenutniKviz.getPitanja() != null)

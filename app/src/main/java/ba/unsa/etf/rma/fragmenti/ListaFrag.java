@@ -1,6 +1,5 @@
 package ba.unsa.etf.rma.fragmenti;
 
-import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -34,7 +33,7 @@ public class ListaFrag extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        kategorije = getArguments().getParcelableArrayList("kategorije");
+        kategorije = new ArrayList<>(getArguments().<Kategorija>getParcelableArrayList("kategorije"));
     }
 
     @Override
@@ -70,4 +69,9 @@ public class ListaFrag extends Fragment {
         });
     }
 
+    public void azurirajKategorije(ArrayList<Kategorija> noveKategorije) {
+        kategorije.clear();
+        kategorije.addAll(noveKategorije);
+        kategorijaAdapter.notifyDataSetChanged();
+    }
 }

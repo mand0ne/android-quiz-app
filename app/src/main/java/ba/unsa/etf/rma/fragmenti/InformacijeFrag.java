@@ -13,6 +13,9 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.klase.Kviz;
 import ba.unsa.etf.rma.klase.SharedViewModel;
@@ -32,15 +35,9 @@ public class InformacijeFrag extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         trenutniKviz = (Kviz) getArguments().get("kviz");
-        azurirajBrojPreostalih();
+        azurirajBrojPreostalih(false);
         brojTacnihPitanja = 0;
         procenatTacnih = 0.0;
-    }
-
-    void azurirajBrojPreostalih(){
-        brojPreostalihPitanja = trenutniKviz.getPitanja().size() - 1;
-        if(brojPreostalihPitanja < 0)
-            brojPreostalihPitanja = 0;
     }
 
     @Override
@@ -75,7 +72,7 @@ public class InformacijeFrag extends Fragment {
                     brojTacnihPitanja++;
 
                 procenatTacnih = (double)brojTacnihPitanja / (trenutniKviz.getPitanja().size() - brojPreostalihPitanja);
-                azurirajBrojPreostalih();
+                azurirajBrojPreostalih(true);
 
                 azuriraj();
             }
@@ -89,9 +86,21 @@ public class InformacijeFrag extends Fragment {
         });
     }
 
+
+    void azurirajBrojPreostalih(boolean decrement){
+        if(decrement)
+            brojPreostalihPitanja--;
+        else
+            brojPreostalihPitanja = trenutniKviz.getPitanja().size() - 1;
+        if(brojPreostalihPitanja < 0)
+            brojPreostalihPitanja = 0;
+    }
+
     private void azuriraj(){
         infBrojPreostalihPitanja.setText(String.valueOf(brojPreostalihPitanja));
         infBrojTacnihPitanja.setText(String.valueOf(brojTacnihPitanja));
-        infProcenatTacni.setText(String.valueOf(Math.round(procenatTacnih * 100.0) / 100.0)  + " %");
+        BigDecimal bd = new BigDecimal(procenatTacnih * 100.0);
+        bd = bd.setScale(2, RoundingMode.HALF_UP);
+        infProcenatTacni.setText(String.valueOf(bd.doubleValue())  + " %");
     }
 }

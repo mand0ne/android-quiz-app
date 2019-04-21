@@ -107,8 +107,7 @@ public class PitanjeFrag extends Fragment {
             @Override
             public void onItemClick(final AdapterView<?> parent, View view, final int position, long id) {
                 kliknutOdgovor = true;
-                odabraniOdgovor = (String) parent.getItemAtPosition(position);
-                Toast.makeText(getContext(), odabraniOdgovor, Toast.LENGTH_SHORT).show();
+                odabraniOdgovor = (String) parent.getItemAtPosition(position);;
 
                 if (odabraniOdgovor.equals(trenutnoPitanje.getTacan()))
                     model.setOdgovor(true);

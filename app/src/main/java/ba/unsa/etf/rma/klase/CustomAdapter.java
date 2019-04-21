@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -58,8 +59,13 @@ public class CustomAdapter extends ArrayAdapter<Object> {
                 @Override
                 public void onDataLoaded() {
                     switch (trenutniKviz.getKategorija().getId()) {
+                        case "-100":
+                            image.setImageResource(R.drawable.addico);
+                            break;
                         case "-1":
                             image.setImageResource(R.drawable.quizico);
+                            break;
+                        case "-2":
                             break;
                         case "-3":
                             image.setImageResource(R.drawable.undefinedquiz);
@@ -78,21 +84,27 @@ public class CustomAdapter extends ArrayAdapter<Object> {
 
             ((ImageView) listItem.findViewById(R.id.ikona)).setImageResource(R.drawable.questionico);
             ((TextView) listItem.findViewById(R.id.naziv)).setText(pitanje.getNaziv());
-        } else if(list.get(position) instanceof  Kategorija) {
-            final ImageView image = listItem.findViewById(R.id.ikona);
+        } else if (list.get(position) instanceof Kategorija) {
             final Kategorija kategorija = (Kategorija) list.get(position);
 
+            final ImageView image = listItem.findViewById(R.id.ikona);
             final IconHelper iconHelper = IconHelper.getInstance(context);
 
             iconHelper.addLoadCallback(new IconHelper.LoadCallback() {
                 @Override
                 public void onDataLoaded() {
+                    Log.i("K A T E G O R I J A", kategorija.getId());
                     switch (kategorija.getId()) {
+                        case "-100":
+                            image.setImageResource(R.drawable.addico);
+                            break;
                         case "-1":
                             image.setImageResource(R.drawable.quizico);
                             break;
                         case "-3":
                             image.setImageResource(R.drawable.undefinedquiz);
+                            break;
+                        case "-2":
                             break;
                         default:
                             image.setImageDrawable(iconHelper.

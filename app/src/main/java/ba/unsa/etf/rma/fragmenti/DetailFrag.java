@@ -2,8 +2,6 @@ package ba.unsa.etf.rma.fragmenti;
 
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
-import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -13,12 +11,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.ListView;
 
 import java.util.ArrayList;
 
 import ba.unsa.etf.rma.R;
-import ba.unsa.etf.rma.klase.CustomAdapter;
+import ba.unsa.etf.rma.aktivnosti.KvizoviAkt;
 import ba.unsa.etf.rma.klase.GridViewAdapter;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.Kviz;
@@ -32,17 +29,20 @@ public class DetailFrag extends Fragment {
     private GridView gridKvizovi;
 
     private ArrayList<Kategorija> kategorije = new ArrayList<>();
-    private ArrayList<Kviz> sviKvizovi = new ArrayList<>();
-    private ArrayList<Kviz> prikazaniKvizovi = new ArrayList<>();
+    private ArrayList<Kviz> sviKvizoviFragment = new ArrayList<>();
+    private ArrayList<Kviz> prikazaniKvizoviFragment = new ArrayList<>();
+    private Kategorija trenutnaKategorija;
 
     private GridViewAdapter kvizAdapter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        kategorije = getArguments().getParcelableArrayList("kategorije");
-        sviKvizovi = getArguments().getParcelableArrayList("kvizovi");
-        prikazaniKvizovi.addAll(sviKvizovi);
+        kategorije = new ArrayList<>(getArguments().<Kategorija>getParcelableArrayList("kategorije"));
+        trenutnaKategorija = kategorije.get(0);
+        sviKvizoviFragment = new ArrayList<>(getArguments().<Kviz>getParcelableArrayList("kvizovi"));
+        sviKvizoviFragment.add(new Kviz("Dodaj kviz", new Kategorija("-100", "-100"), null));
+        prikazaniKvizoviFragment.addAll(sviKvizoviFragment);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class DetailFrag extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        kvizAdapter = new GridViewAdapter(getContext(), prikazaniKvizovi);
+        kvizAdapter = new GridViewAdapter(getContext(), prikazaniKvizoviFragment);
         gridKvizovi.setAdapter(kvizAdapter);
 
         model = ViewModelProviders.of(getActivity()).get(KvizoviViewModel.class);
@@ -71,20 +71,54 @@ public class DetailFrag extends Fragment {
             @Override
             public void onChanged(@Nullable Kategorija kategorija) {
                 if (kategorija != null) {
-                    if (kategorija.getId().equals("-1")) {
-                        prikazaniKvizovi.clear();
-                        prikazaniKvizovi.addAll(sviKvizovi);
-                    } else {
-                        prikazaniKvizovi.clear();
-                        for (Kviz k : sviKvizovi)
-                            if (k.getKategorija() != null && k.getKategorija().getNaziv().equals(kategorija.getNaziv())
-                                    || kategorija.getId().equals("-1"))
-                                prikazaniKvizovi.add(k);
-                    }
-
+                    trenutnaKategorija = kategorija;
+                    filtrirajKvizove();
                     kvizAdapter.notifyDataSetChanged();
                 }
             }
         });
+
+        gridKvizovi.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
+                if (kliknutiKviz.getNaziv().equals("Dodaj kviz"))
+                    ((KvizoviAkt) getActivity()).aktivnostDodajKviz();
+                else
+                    ((KvizoviAkt) getActivity()).aktivnostUrediKviz(kliknutiKviz);
+
+                return true;
+            }
+        });
+
+        gridKvizovi.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
+                if (!(kliknutiKviz.getNaziv().equals("Dodaj kviz")))
+                    ((KvizoviAkt) getActivity()).aktivnostIgrajKviz(kliknutiKviz);
+            }
+        });
+    }
+
+    private void filtrirajKvizove() {
+        if (trenutnaKategorija.getId().equals("-1")) {
+            prikazaniKvizoviFragment.clear();
+            prikazaniKvizoviFragment.addAll(sviKvizoviFragment);
+        } else {
+            prikazaniKvizoviFragment.clear();
+            for (Kviz k : sviKvizoviFragment)
+                if (k.getKategorija() != null && k.getKategorija().getNaziv().equals(trenutnaKategorija.getNaziv())
+                        || trenutnaKategorija.getId().equals("-1") || k.getNaziv().equals("Dodaj kviz"))
+                    prikazaniKvizoviFragment.add(k);
+        }
+    }
+
+    public void azurirajKvizove(ArrayList<Kviz> azuriraniKvizovi) {
+        sviKvizoviFragment.clear();
+        sviKvizoviFragment.addAll(azuriraniKvizovi);
+        sviKvizoviFragment.add(new Kviz("Dodaj kviz", new Kategorija("-100", "-100"), null));
+        filtrirajKvizove();
+        kvizAdapter.notifyDataSetChanged();
     }
 }

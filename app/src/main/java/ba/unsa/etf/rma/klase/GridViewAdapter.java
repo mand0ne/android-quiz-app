@@ -43,7 +43,7 @@ public class GridViewAdapter extends ArrayAdapter<Kviz> {
         if (trenutniKviz.getPitanja() != null)
             brojPitanjaKviza.setText(String.valueOf(trenutniKviz.getPitanja().size()));
         else
-            brojPitanjaKviza.setText("0");
+            brojPitanjaKviza.setText("");
 
         final IconHelper iconHelper = IconHelper.getInstance(context);
 
@@ -51,6 +51,9 @@ public class GridViewAdapter extends ArrayAdapter<Kviz> {
             @Override
             public void onDataLoaded() {
                 switch (trenutniKviz.getKategorija().getId()) {
+                    case "-100":
+                        image.setImageResource(R.drawable.addico);
+                        break;
                     case "-1":
                         image.setImageResource(R.drawable.quizico);
                         break;

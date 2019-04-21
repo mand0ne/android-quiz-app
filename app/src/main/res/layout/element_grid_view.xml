@@ -7,8 +7,8 @@
 
     <ImageView
         android:id="@+id/ikonaKategorije"
-        android:layout_width="53dp"
-        android:layout_height="44dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_margin="7dp"
         android:layout_marginTop="7dp"
         android:layout_marginBottom="9dp" />
@@ -16,17 +16,15 @@
     <TextView
         android:id="@+id/nazivKviza"
         android:layout_width="match_parent"
-        android:textAlignment="center"
+        android:layout_height="30dp"
         android:gravity="center_vertical"
-        android:layout_height="29dp"
-        android:text="TextView" />
+        android:textAlignment="center" />
 
     <TextView
         android:id="@+id/brojPitanjaKviza"
         android:layout_width="match_parent"
-        android:textAlignment="center"
+        android:layout_height="30dp"
         android:gravity="center_vertical"
-        android:layout_height="33dp"
-        android:text="TextView" />
+        android:textAlignment="center" />
 
 </LinearLayout>

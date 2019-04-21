@@ -21,16 +21,14 @@ import ba.unsa.etf.rma.R;
 
 public class CustomAdapter extends ArrayAdapter<Object> {
 
-    private Resources res;
     private Context context;
     private ArrayList<?> list;
 
     @SuppressWarnings("unchecked")
-    public CustomAdapter(@NonNull Context context, ArrayList<?> list, Resources res) {
+    public CustomAdapter(@NonNull Context context, ArrayList<?> list) {
         super(context, 0, (List<Object>) list);
         this.context = context;
         this.list = list;
-        this.res = res;
     }
 
     public void setList(ArrayList<?> list) {
@@ -59,15 +57,18 @@ public class CustomAdapter extends ArrayAdapter<Object> {
             iconHelper.addLoadCallback(new IconHelper.LoadCallback() {
                 @Override
                 public void onDataLoaded() {
-                    if (trenutniKviz.getKategorija().getId().equals("-1"))
-                        image.setImageResource(res.
-                                getIdentifier("ba.unsa.etf.rma:drawable/quizico", null, null));
-                    else if(trenutniKviz.getKategorija().getId().equals("-3"))
-                        image.setImageResource(res.
-                                getIdentifier("ba.unsa.etf.rma:drawable/undefinedquiz", null, null));
-                    else
-                        image.setImageDrawable(iconHelper.
-                                getIcon(Integer.valueOf(trenutniKviz.getKategorija().getId())).getDrawable(context));
+                    switch (trenutniKviz.getKategorija().getId()) {
+                        case "-1":
+                            image.setImageResource(R.drawable.quizico);
+                            break;
+                        case "-3":
+                            image.setImageResource(R.drawable.undefinedquiz);
+                            break;
+                        default:
+                            image.setImageDrawable(iconHelper.
+                                    getIcon(Integer.valueOf(trenutniKviz.getKategorija().getId())).getDrawable(context));
+                            break;
+                    }
                 }
             });
 
@@ -75,8 +76,33 @@ public class CustomAdapter extends ArrayAdapter<Object> {
         } else if (list.get(position) instanceof Pitanje) {
             Pitanje pitanje = (Pitanje) list.get(position);
 
-            ((ImageView) listItem.findViewById(R.id.ikona)).setImageResource(res.getIdentifier("ba.unsa.etf.rma:drawable/questionico", null, null));
+            ((ImageView) listItem.findViewById(R.id.ikona)).setImageResource(R.drawable.questionico);
             ((TextView) listItem.findViewById(R.id.naziv)).setText(pitanje.getNaziv());
+        } else if(list.get(position) instanceof  Kategorija) {
+            final ImageView image = listItem.findViewById(R.id.ikona);
+            final Kategorija kategorija = (Kategorija) list.get(position);
+
+            final IconHelper iconHelper = IconHelper.getInstance(context);
+
+            iconHelper.addLoadCallback(new IconHelper.LoadCallback() {
+                @Override
+                public void onDataLoaded() {
+                    switch (kategorija.getId()) {
+                        case "-1":
+                            image.setImageResource(R.drawable.quizico);
+                            break;
+                        case "-3":
+                            image.setImageResource(R.drawable.undefinedquiz);
+                            break;
+                        default:
+                            image.setImageDrawable(iconHelper.
+                                    getIcon(Integer.valueOf(kategorija.getId())).getDrawable(context));
+                            break;
+                    }
+                }
+            });
+
+            ((TextView) listItem.findViewById(R.id.naziv)).setText(kategorija.getNaziv());
         }
 
         return listItem;

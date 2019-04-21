@@ -34,7 +34,7 @@ public class PitanjeFrag extends Fragment {
     private Kviz trenutniKviz = null;
     private ArrayList<Pitanje> kvizPitanja = new ArrayList<>();
     private Pitanje trenutnoPitanje = null;
-    private ArrayList<String> odgovori = null;
+    private ArrayList<String> odgovori = new ArrayList<>();
     private ArrayAdapter<String> oAdapter = null;
     private boolean kliknutOdgovor;
     private String odabraniOdgovor;
@@ -44,8 +44,10 @@ public class PitanjeFrag extends Fragment {
         super.onCreate(savedInstanceState);
         trenutniKviz = (Kviz) getArguments().get("kviz");
         kvizPitanja.addAll(trenutniKviz.getPitanja());
-        trenutnoPitanje = kvizPitanja.remove(new Random().nextInt(kvizPitanja.size()));
-        odgovori = trenutnoPitanje.dajRandomOdgovore();
+        if (kvizPitanja.size() > 0) {
+            trenutnoPitanje = kvizPitanja.remove(new Random().nextInt(kvizPitanja.size()));
+            odgovori = trenutnoPitanje.dajRandomOdgovore();
+        }
         kliknutOdgovor = false;
     }
 
@@ -63,7 +65,10 @@ public class PitanjeFrag extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         odgovoriPitanja = getView().findViewById(R.id.odgovoriPitanja);
         tekstPitanja = getView().findViewById(R.id.tekstPitanja);
-        tekstPitanja.setText(trenutnoPitanje.getTekstPitanja());
+        if(trenutnoPitanje != null)
+            tekstPitanja.setText(trenutnoPitanje.getTekstPitanja());
+        else
+            tekstPitanja.setText("Kviz je završen!");
     }
 
     @Override
@@ -75,11 +80,15 @@ public class PitanjeFrag extends Fragment {
             public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
                 View row = super.getView(position, null, parent);
 
-                if (kliknutOdgovor && getItem(position).equals(trenutnoPitanje.getTacan()))
-                    row.setBackgroundColor(getResources().getColor(R.color.zelena));
-                else if (kliknutOdgovor && getItem(position).equals(odabraniOdgovor) && !odabraniOdgovor.equals(trenutnoPitanje.getTacan()))
-                    row.setBackgroundColor(getResources().getColor(R.color.crvena));
-                else
+                if (kliknutOdgovor) {
+                    String item = getItem(position);
+
+                    if (trenutnoPitanje.getTacan().equals(item))
+                        row.setBackgroundColor(getResources().getColor(R.color.zelena));
+
+                    if (odabraniOdgovor.equals(item) && !trenutnoPitanje.getTacan().equals(odabraniOdgovor))
+                        row.setBackgroundColor(getResources().getColor(R.color.crvena));
+                } else
                     row.setBackgroundColor(0x000000);
 
                 return row;
@@ -106,28 +115,32 @@ public class PitanjeFrag extends Fragment {
                 else
                     model.setOdgovor(false);
 
-                oAdapter.notifyDataSetChanged();
+                odgovoriPitanja.invalidateViews();
 
-                if(kvizPitanja.size() >0)
-                    trenutnoPitanje = kvizPitanja.remove(new Random().nextInt(kvizPitanja.size()));
-
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        odgovori.clear();
-                        if (kvizPitanja.size()>0){
+                if (kvizPitanja.size() > 0) {
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            odgovori.clear();
+                            trenutnoPitanje = kvizPitanja.remove(new Random().nextInt(kvizPitanja.size()));
                             odgovori.addAll(trenutnoPitanje.dajRandomOdgovore());
                             tekstPitanja.setText(trenutnoPitanje.getTekstPitanja());
+
+                            oAdapter.notifyDataSetChanged();
+                            kliknutOdgovor = false;
+                            odabraniOdgovor = "";
                         }
-                        else
+                    }, 2000);
+                } else {
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            odgovori.clear();
+                            oAdapter.notifyDataSetChanged();
                             tekstPitanja.setText("Kviz je završen!");
-
-
-                        oAdapter.notifyDataSetChanged();
-                        kliknutOdgovor = false;
-                        odabraniOdgovor = null;
-                    }
-                }, 2000);
+                        }
+                    }, 2000);
+                }
             }
         });
     }

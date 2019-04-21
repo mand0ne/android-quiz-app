@@ -1,29 +1,39 @@
 package ba.unsa.etf.rma.aktivnosti;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
 import ba.unsa.etf.rma.R;
+import ba.unsa.etf.rma.fragmenti.DetailFrag;
+import ba.unsa.etf.rma.fragmenti.InformacijeFrag;
+import ba.unsa.etf.rma.fragmenti.ListaFrag;
+import ba.unsa.etf.rma.fragmenti.PitanjeFrag;
 import ba.unsa.etf.rma.klase.CustomAdapter;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.Kviz;
 import ba.unsa.etf.rma.klase.NDSpinner;
 
+import static android.provider.MediaStore.Images.ImageColumns.ORIENTATION;
+
 public class KvizoviAkt extends AppCompatActivity {
 
     static final int DODAJ_KVIZ = 30;
     static final int PROMIJENI_KVIZ = 31;
-    static final int IGRAJ_KVIZ = 32;
 
     private Context context;
     private ListView lvKvizovi;
@@ -43,78 +53,107 @@ public class KvizoviAkt extends AppCompatActivity {
         setContentView(R.layout.activity_kvizovi_akt);
         context = KvizoviAkt.this;
 
-        lvKvizovi = findViewById(R.id.lvKvizovi);
-        spPostojeceKategorije = findViewById(R.id.spPostojeceKategorije);
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        double dpwidth = displayMetrics.widthPixels / displayMetrics.density;
 
-        initialize();
+        kategorije.add(new Kategorija("Svi", "-1"));
 
-        sAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, kategorije);
-        sAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spPostojeceKategorije.setAdapter(sAdapter);
+        if (dpwidth >= 550) {
+            FragmentManager manager = getSupportFragmentManager();
 
-        // Klik na zadnji element liste koji je za dodavanje novog kviza
-        lvFooterView.setOnClickListener(new View.OnClickListener() {
-                                            @Override
-                                            public void onClick(View v) {
-                                                Intent intent = new Intent(context, DodajKvizAkt.class);
-                                                intent.putParcelableArrayListExtra("kategorije", kategorije);
-                                                intent.putParcelableArrayListExtra("kvizovi", sviKvizovi);
-                                                intent.putExtra("requestCode", DODAJ_KVIZ);
-                                                startActivityForResult(intent, DODAJ_KVIZ);
+            Intent intent = getIntent();
+            Kviz trenutniKviz = intent.getParcelableExtra("kviz");
+
+            FragmentManager fragmentManager = getSupportFragmentManager();
+
+            Bundle b = new Bundle();
+            b.putParcelable("kviz", trenutniKviz);
+            b.putParcelableArrayList("kvizovi", sviKvizovi);
+            b.putParcelableArrayList("kategorije", kategorije);
+
+            ListaFrag listaFrag = new ListaFrag();
+            DetailFrag detailFrag = new DetailFrag();
+
+            listaFrag.setArguments(b);
+            detailFrag.setArguments(b);
+
+            fragmentManager.beginTransaction().replace(R.id.listPlace, listaFrag).commit();
+            fragmentManager.beginTransaction().replace(R.id.detailPlace, detailFrag).commit();
+        } else {
+
+            lvKvizovi = findViewById(R.id.lvKvizovi);
+            spPostojeceKategorije = findViewById(R.id.spPostojeceKategorije);
+
+            initialize();
+
+            sAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, kategorije);
+            sAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spPostojeceKategorije.setAdapter(sAdapter);
+
+            // Klik na zadnji element liste koji je za dodavanje novog kviza
+            lvFooterView.setOnClickListener(new View.OnClickListener() {
+                                                @Override
+                                                public void onClick(View v) {
+                                                    Intent intent = new Intent(context, DodajKvizAkt.class);
+                                                    intent.putParcelableArrayListExtra("kategorije", kategorije);
+                                                    intent.putParcelableArrayListExtra("kvizovi", sviKvizovi);
+                                                    intent.putExtra("requestCode", DODAJ_KVIZ);
+                                                    startActivityForResult(intent, DODAJ_KVIZ);
+                                                }
                                             }
-                                        }
-        );
+            );
 
-        // Klik na kviz za uredivanje
-        lvKvizovi.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent = new Intent(context, DodajKvizAkt.class);
-                intent.putParcelableArrayListExtra("kategorije", kategorije);
-                intent.putParcelableArrayListExtra("kvizovi", sviKvizovi);
-                intent.putExtra("kviz", (Kviz) parent.getItemAtPosition(position));
-                intent.putExtra("requestCode", PROMIJENI_KVIZ);
-                startActivityForResult(intent, PROMIJENI_KVIZ);
-
-                return true;
-            }
-        });
-
-        lvKvizovi.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent = new Intent(context, IgrajKvizAkt.class);
-                intent.putExtra("kviz", (Kviz) parent.getItemAtPosition(position));
-                startActivityForResult(intent, IGRAJ_KVIZ);
-            }
-        });
-
-        spPostojeceKategorije.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                Kategorija ka = (Kategorija) spPostojeceKategorije.getSelectedItem();
-
-                if (ka != null) {
-                    if (ka.getId().equals("-1")) {
-                        prikazaniKvizovi.clear();
-                        prikazaniKvizovi.addAll(sviKvizovi);
-                    } else {
-                        prikazaniKvizovi.clear();
-                        for (Kviz k : sviKvizovi)
-                            if (k.getKategorija() != null && k.getKategorija().getNaziv().equals(ka.getNaziv())
-                                    || ka.getId().equals("-1"))
-                                prikazaniKvizovi.add(k);
-                    }
-
-                    adapter.notifyDataSetChanged();
+            // Klik na kviz za uredivanje
+            lvKvizovi.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+                @Override
+                public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                    Intent intent = new Intent(context, DodajKvizAkt.class);
+                    intent.putParcelableArrayListExtra("kategorije", kategorije);
+                    intent.putParcelableArrayListExtra("kvizovi", sviKvizovi);
+                    intent.putExtra("kviz", (Kviz) parent.getItemAtPosition(position));
+                    intent.putExtra("requestCode", PROMIJENI_KVIZ);
+                    startActivityForResult(intent, PROMIJENI_KVIZ);
+                    return true;
                 }
-            }
+            });
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                spPostojeceKategorije.setSelection(0);
-            }
-        });
+            lvKvizovi.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Intent intent = new Intent(context, IgrajKvizAkt.class);
+                    intent.putExtra("kviz", (Kviz) parent.getItemAtPosition(position));
+                    startActivity(intent);
+                }
+            });
+
+            spPostojeceKategorije.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    Kategorija ka = (Kategorija) spPostojeceKategorije.getSelectedItem();
+
+                    if (ka != null) {
+                        if (ka.getId().equals("-1")) {
+                            prikazaniKvizovi.clear();
+                            prikazaniKvizovi.addAll(sviKvizovi);
+                        } else {
+                            prikazaniKvizovi.clear();
+                            for (Kviz k : sviKvizovi)
+                                if (k.getKategorija() != null && k.getKategorija().getNaziv().equals(ka.getNaziv())
+                                        || ka.getId().equals("-1"))
+                                    prikazaniKvizovi.add(k);
+                        }
+
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                    spPostojeceKategorije.setSelection(0);
+                }
+            });
+        }
     }
 
     @Override
@@ -153,11 +192,8 @@ public class KvizoviAkt extends AppCompatActivity {
     }
 
     private void initialize() {
-        // Za Spinner
-        kategorije.add(new Kategorija("Svi", "-1"));
-
         // Za ListView
-        adapter = new CustomAdapter(context, prikazaniKvizovi, getResources());
+        adapter = new CustomAdapter(context, prikazaniKvizovi);
         lvKvizovi.setAdapter(adapter);
         lvKvizovi.addFooterView(lvFooterView = adapter.getFooterView(lvKvizovi, "Dodaj kviz"));
     }

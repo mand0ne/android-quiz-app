@@ -22,8 +22,7 @@
             android:name=".aktivnosti.DodajKvizAkt"
             android:configChanges="orientation|screenSize" />
         <activity
-            android:name=".aktivnosti.KvizoviAkt"
-            android:configChanges="orientation|screenSize">
+            android:name=".aktivnosti.KvizoviAkt">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

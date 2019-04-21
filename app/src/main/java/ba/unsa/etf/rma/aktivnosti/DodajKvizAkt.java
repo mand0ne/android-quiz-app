@@ -92,7 +92,7 @@ public class DodajKvizAkt extends AppCompatActivity {
 
 
         dodana = new ArrayList<>(trenutniKviz.getPitanja());
-        adapterDodana = new CustomAdapter(this, dodana, getResources());
+        adapterDodana = new CustomAdapter(this, dodana);
         lvDodanaPitanja.setAdapter(adapterDodana);
         lvDodanaPitanja.addFooterView(ldFooterView = adapterDodana.getFooterView(lvDodanaPitanja, "Dodaj pitanje"));
 
@@ -278,19 +278,8 @@ public class DodajKvizAkt extends AppCompatActivity {
     }
 
     public void performFileSearch(View v) {
-
-        // ACTION_OPEN_DOCUMENT is the intent to choose a file via the system's file
-        // browser.
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-
-        // Filter to only show results that can be "opened", such as a
-        // file (as opposed to a list of contacts or timezones)
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-
-        // Filter to show only images, using the image MIME data type.
-        // If one wanted to search for ogg vorbis files, the type would be "audio/ogg".
-        // To search for all documents available via installed storage providers,
-        // it would be "*/*".
         intent.setType("text/*");
         startActivityForResult(intent, READ_REQUEST_CODE);
     }
@@ -358,7 +347,7 @@ public class DodajKvizAkt extends AppCompatActivity {
 
                 for (String o : odgovori)
                     if (odgovor.equals(o)) {
-                        throwAlert("U kvizu kojeg importujete postoji pitanje sa istim odgovorima!");
+                        throwAlert("Kviz kojeg importujete nije ispravan,  postoji ponavljanje odgovora!");
                         return;
                     }
 
@@ -367,7 +356,7 @@ public class DodajKvizAkt extends AppCompatActivity {
 
             for (Pitanje p : importovanaPitanja)
                 if (p.getNaziv().equals(nazivPitanja)) {
-                    throwAlert("U kvizu kojeg importujete postoji više pitanja sa istim nazivom!");
+                    throwAlert("Kviz nije ispravan, postoje pitanja sa istim nazivom!");
                     return;
                 }
 
@@ -419,36 +408,5 @@ public class DodajKvizAkt extends AppCompatActivity {
         alertDialog.create();
         alertDialog.show();
     }
-
-    /*
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        outState.putParcelableArrayList("kvizovi", kvizovi);
-        outState.putParcelableArrayList("kategorije", kategorije);
-        outState.putParcelableArrayList("dodana", dodana);
-        outState.putParcelableArrayList("moguca", moguca);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-
-        kvizovi.clear();
-        kvizovi.addAll(Objects.requireNonNull(savedInstanceState.<Kviz>getParcelableArrayList("kvizovi")));
-        kategorije.clear();
-        kategorije.addAll(Objects.requireNonNull(savedInstanceState.<Kategorija>getParcelableArrayList("kategorije")));
-
-        dodana.clear();
-        dodana.addAll(Objects.requireNonNull(savedInstanceState.<Pitanje>getParcelableArrayList("dodana")));
-        moguca.clear();
-        moguca.addAll(Objects.requireNonNull(savedInstanceState.<Pitanje>getParcelableArrayList("moguca")));
-
-        sAdapter.notifyDataSetChanged();
-        adapterDodana.notifyDataSetChanged();
-        adapterMoguca.notifyDataSetChanged();
-    }*/
-
 }
 

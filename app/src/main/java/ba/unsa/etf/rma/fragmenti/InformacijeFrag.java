@@ -32,9 +32,15 @@ public class InformacijeFrag extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         trenutniKviz = (Kviz) getArguments().get("kviz");
-        brojPreostalihPitanja = trenutniKviz.getPitanja().size();
+        azurirajBrojPreostalih();
         brojTacnihPitanja = 0;
         procenatTacnih = 0.0;
+    }
+
+    void azurirajBrojPreostalih(){
+        brojPreostalihPitanja = trenutniKviz.getPitanja().size() - 1;
+        if(brojPreostalihPitanja < 0)
+            brojPreostalihPitanja = 0;
     }
 
     @Override
@@ -65,21 +71,27 @@ public class InformacijeFrag extends Fragment {
         model.getOdgovor().observe(getViewLifecycleOwner(), new Observer<Boolean>() {
             @Override
             public void onChanged(@Nullable Boolean odgovor) {
-                Toast.makeText(getContext(), "USO", Toast.LENGTH_SHORT).show();
-                brojPreostalihPitanja--;
                 if(odgovor)
                     brojTacnihPitanja++;
 
                 procenatTacnih = (double)brojTacnihPitanja / (trenutniKviz.getPitanja().size() - brojPreostalihPitanja);
+                azurirajBrojPreostalih();
+
                 azuriraj();
             }
         });
 
+        btnKraj.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getActivity().finish();
+            }
+        });
     }
 
     private void azuriraj(){
         infBrojPreostalihPitanja.setText(String.valueOf(brojPreostalihPitanja));
         infBrojTacnihPitanja.setText(String.valueOf(brojTacnihPitanja));
-        infProcenatTacni.setText(String.valueOf(Math.round(procenatTacnih*100))  + " %");
+        infProcenatTacni.setText(String.valueOf(Math.round(procenatTacnih * 100.0) / 100.0)  + " %");
     }
 }

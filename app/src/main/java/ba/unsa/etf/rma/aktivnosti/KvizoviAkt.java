@@ -162,12 +162,9 @@ public class KvizoviAkt extends AppCompatActivity {
                 if (requestCode == PROMIJENI_KVIZ) {
                     int index = dajIndexKviza(data.getStringExtra("staroImeKviza"));
                     sviKvizovi.set(index, novi);
-                } else if (requestCode == DODAJ_KVIZ){
-                    if(dpwidth >= 550)
-                        sviKvizovi.add(sviKvizovi.size() -1, novi);
-                    else
+                } else if (requestCode == DODAJ_KVIZ)
                         sviKvizovi.add(novi);
-                }
+
 
                 if(dpwidth < 550)
                     spPostojeceKategorije.setSelection(spPostojeceKategorije.getSelectedItemPosition());

@@ -5,6 +5,7 @@ import android.os.Parcelable;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.UUID;
 
 @SuppressWarnings("unused")
 public class Pitanje implements Parcelable {
@@ -12,15 +13,26 @@ public class Pitanje implements Parcelable {
     private String tekstPitanja;
     private ArrayList<String> odgovori = new ArrayList<>();
     private String tacan = null;
+    private String firebaseId;
+
+    public Pitanje(String naziv, String tekstPitanja, ArrayList<String> odgovori, String tacan, String firebaseId) {
+        this.naziv = naziv;
+        this.tekstPitanja = tekstPitanja;
+        this.odgovori = odgovori;
+        this.tacan = tacan;
+        this.firebaseId = firebaseId;
+    }
 
     public Pitanje(String naziv, String tekstPitanja, String tacan) {
         this.naziv = naziv;
         this.tekstPitanja = tekstPitanja;
 
-        if(tacan != null){
+        if (tacan != null) {
             odgovori.add(tacan);
             this.tacan = tacan;
         }
+
+        generisiFirebaseId();
     }
 
     public String getNaziv() {
@@ -86,6 +98,7 @@ public class Pitanje implements Parcelable {
         dest.writeString(this.tekstPitanja);
         dest.writeStringList(this.odgovori);
         dest.writeString(this.tacan);
+        dest.writeString(this.firebaseId);
     }
 
     private Pitanje(Parcel in) {
@@ -93,6 +106,7 @@ public class Pitanje implements Parcelable {
         this.tekstPitanja = in.readString();
         this.odgovori = in.createStringArrayList();
         this.tacan = in.readString();
+        this.firebaseId = in.readString();
     }
 
     public static final Parcelable.Creator<Pitanje> CREATOR = new Parcelable.Creator<Pitanje>() {
@@ -106,4 +120,26 @@ public class Pitanje implements Parcelable {
             return new Pitanje[size];
         }
     };
+
+    public void generisiFirebaseId(){
+        firebaseId = "QUES[" + UUID.randomUUID().toString().toUpperCase() + "]";
+    }
+
+    public String firebaseId() {
+        return firebaseId;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (getClass() != obj.getClass())
+            return false;
+
+        Pitanje p = (Pitanje) obj;
+        return this.naziv.equals(p.naziv) && this.tacan.equals(p.tacan) && this.odgovori.size() == p.odgovori.size();
+    }
+
+    @Override
+    public int hashCode() {
+        return (naziv + tacan + odgovori.size()).hashCode();
+    }
 }

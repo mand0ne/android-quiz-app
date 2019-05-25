@@ -17,15 +17,19 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import org.apache.commons.lang3.StringUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
+
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.klase.CustomAdapter;
+import ba.unsa.etf.rma.klase.HttpPostRequest;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.Kviz;
 import ba.unsa.etf.rma.klase.NDSpinner;
@@ -55,6 +59,7 @@ public class DodajKvizAkt extends AppCompatActivity {
     private String staroImeKviza = null;
 
     private ArrayAdapter<Kategorija> sAdapter;
+    private String TOKEN = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +79,7 @@ public class DodajKvizAkt extends AppCompatActivity {
         kvizovi = intent.getParcelableArrayListExtra("kvizovi");
         kategorije = intent.getParcelableArrayListExtra("kategorije");
         trenutniKviz = intent.getParcelableExtra("kviz");
+        TOKEN = intent.getStringExtra("token");
 
         if (trenutniKviz == null)
             trenutniKviz = new Kviz(null, null);
@@ -105,16 +111,19 @@ public class DodajKvizAkt extends AppCompatActivity {
             public void onClick(View v) {
                 if (validanUnos()) {
                     if (!postojiKviz()) {
-                        Intent i = new Intent();
+                        Intent intent = new Intent();
                         trenutniKviz.setNaziv(etNaziv.getText().toString());
                         trenutniKviz.setKategorija((Kategorija) spKategorije.getSelectedItem());
                         trenutniKviz.setPitanja(dodana);
-                        i.putExtra("kviz", trenutniKviz);
-                        if (intent.getIntExtra("requestCode", 0) == PROMIJENI_KVIZ)
-                            i.putExtra("staroImeKviza", staroImeKviza);
 
-                        i.putParcelableArrayListExtra("kategorije", kategorije);
-                        setResult(RESULT_OK, i);
+                        intent.putExtra("kviz", trenutniKviz);
+                        if (intent.getIntExtra("requestCode", 0) == PROMIJENI_KVIZ)
+                            intent.putExtra("staroImeKviza", staroImeKviza);
+
+                        intent.putParcelableArrayListExtra("kategorije", kategorije);
+                        setResult(RESULT_OK, intent);
+
+                        patchQuizDocumentOnFirebase(trenutniKviz);
                         finish();
                     } else
                         Toast.makeText(DodajKvizAkt.this, "Kviz sa navedenim imenom već postoji!", Toast.LENGTH_SHORT).show();
@@ -177,6 +186,56 @@ public class DodajKvizAkt extends AppCompatActivity {
         });
     }
 
+    private void patchQuizDocumentOnFirebase(Kviz noviKviz) {
+        StringBuilder dokument = new StringBuilder("{\"fields\": { \"naziv\": {\"stringValue\": \"" + noviKviz.getNaziv() + "\"}," +
+                "\"idKategorije\": {\"stringValue\": \"" + noviKviz.getKategorija().firebaseId() + "\"}," +
+                "\"pitanja\": {\"arrayValue\": { \"values\": [");
+
+        ArrayList<Pitanje> pitanja = noviKviz.getPitanja();
+        for (int i = 0; i < pitanja.size(); i++) {
+            dokument.append("{\"stringValue\": \"");
+            dokument.append(pitanja.get(i).firebaseId());
+            dokument.append("\"}");
+            if (i < pitanja.size() - 1)
+                dokument.append(",");
+        }
+
+        dokument.append("]}}}}");
+        new HttpPostRequest().execute("Kvizovi", TOKEN, dokument.toString(), trenutniKviz.firebaseId());
+    }
+
+    private void patchCategoryDocumentOnFirebase(Kategorija novaKategorija) {
+        String dokument = "{\"fields\": { \"naziv\": {\"stringValue\": \"" + novaKategorija.getNaziv() + "\"}," +
+                "\"idIkonice\": {\"integerValue\": \"" + novaKategorija.getId() + "\"}}}";
+
+        new HttpPostRequest().execute("Kategorije", TOKEN, dokument, novaKategorija.firebaseId());
+    }
+
+    private void patchQeustionDocumentOnFirebase(Pitanje novoPitanje) {
+        StringBuilder dokument = new StringBuilder("{\"fields\": { \"naziv\": {\"stringValue\": \"" + novoPitanje.getNaziv() + "\"}," +
+                "\"odgovori\": {\"arrayValue\": {\"values\": [");
+
+        int indexTacnog = 0;
+
+        ArrayList<String> odgovori = novoPitanje.getOdgovori();
+        for (int i = 0; i < odgovori.size(); i++) {
+            dokument.append("{\"stringValue\": \"");
+            dokument.append(odgovori.get(i));
+            dokument.append("\"}");
+            if (i < odgovori.size() - 1)
+                dokument.append(",");
+            if (odgovori.get(i).equals(novoPitanje.getTacan()))
+                indexTacnog = i;
+        }
+
+        dokument.append("]}}, \"indexTacnog\": {\"integerValue\": \"");
+        dokument.append(indexTacnog);
+        dokument.append("\"}}}");
+
+        new HttpPostRequest().execute("Pitanja", TOKEN, dokument.toString(), novoPitanje.firebaseId());
+    }
+
+
     private void exchange(ArrayList<Pitanje> source, ArrayList<Pitanje> destination, int position) {
         Pitanje p = source.get(position);
         destination.add(p);
@@ -212,16 +271,16 @@ public class DodajKvizAkt extends AppCompatActivity {
                 if (requestCode == DODAJ_PITANJE) {
                     Pitanje novoPitanje = data.getParcelableExtra("novoPitanje");
                     dodana.add(novoPitanje);
-                    // trenutniKviz.setPitanja(dodana);
                     adapterDodana.notifyDataSetChanged();
+                    patchQeustionDocumentOnFirebase(novoPitanje);
                 }
 
                 if (requestCode == DODAJ_KATEGORIJU) {
                     Kategorija novaKategorija = data.getParcelableExtra("novaKategorija");
                     kategorije.add(kategorije.size() - 1, novaKategorija);
-                    // trenutniKviz.setKategorija(novaKategorija);
                     sAdapter.notifyDataSetChanged();
                     spKategorije.setSelection(kategorije.size() - 2);
+                    patchCategoryDocumentOnFirebase(novaKategorija);
                 }
             }
         }
@@ -230,7 +289,7 @@ public class DodajKvizAkt extends AppCompatActivity {
             if (data != null) {
                 try {
                     Uri uri = data.getData();
-                    validateImport(loadImportIntoArray(uri));
+                    validateImportAndAssign(loadImportIntoArray(uri));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -280,7 +339,7 @@ public class DodajKvizAkt extends AppCompatActivity {
     }
 
 
-    private void validateImport(ArrayList<String> importovanKviz) {
+    private void validateImportAndAssign(ArrayList<String> importovanKviz) {
 
         if (importovanKviz.isEmpty()) {
             throwAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
@@ -300,21 +359,20 @@ public class DodajKvizAkt extends AppCompatActivity {
 
         String imeKviza = razdvajac.nextToken();
         String nazivKategorijeKviza = razdvajac.nextToken();
+        int brojPitanjaKviza;
 
-        int brojPitanjaKviza = Integer.parseInt(razdvajac.nextToken());
+        try {
+            brojPitanjaKviza = Integer.parseInt(razdvajac.nextToken());
+        } catch (Exception e) {
+            throwAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
+            return;
+        }
 
         for (Kviz k : kvizovi)
             if (k.getNaziv().equals(imeKviza)) {
                 throwAlert("Kviz kojeg importujete već postoji!");
                 return;
             }
-
-        for (Kategorija k : kategorije)
-            if (k.getNaziv().equals(nazivKategorijeKviza))
-                kategorijaKviza = k;
-
-        if (kategorijaKviza == null)
-            kategorijaKviza = new Kategorija(nazivKategorijeKviza, "-3");
 
         if (brojPitanjaKviza != importovanKviz.size() - 1) {
             throwAlert("Kviz kojeg imporujete ima neispravan broj pitanja!");
@@ -332,8 +390,14 @@ public class DodajKvizAkt extends AppCompatActivity {
             StringTokenizer razdvajacPitanja = new StringTokenizer(pitanje, ",");
 
             String nazivPitanja = razdvajacPitanja.nextToken();
-            int brojOdgovora = Integer.parseInt(razdvajacPitanja.nextToken());
-            int indexTacnogOdgovora = Integer.parseInt(razdvajacPitanja.nextToken());
+            int brojOdgovora, indexTacnogOdgovora;
+            try {
+                brojOdgovora = Integer.parseInt(razdvajacPitanja.nextToken());
+                indexTacnogOdgovora = Integer.parseInt(razdvajacPitanja.nextToken());
+            } catch (Exception e) {
+                throwAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
+                return;
+            }
 
             ArrayList<String> odgovori = new ArrayList<>();
 
@@ -342,11 +406,21 @@ public class DodajKvizAkt extends AppCompatActivity {
 
                 for (String o : odgovori)
                     if (odgovor.equals(o)) {
-                        throwAlert("Kviz kojeg importujete nije ispravan,  postoji ponavljanje odgovora!");
+                        throwAlert("Kviz kojeg importujete nije ispravan, postoji ponavljanje odgovora!");
                         return;
                     }
 
                 odgovori.add(odgovor);
+            }
+
+            if (brojOdgovora == 0 || brojOdgovora != odgovori.size()) {
+                throwAlert("Kviz kojeg importujete ima pitanje sa neispravanim brojem odgovora!");
+                return;
+            }
+
+            if (indexTacnogOdgovora < 0 || indexTacnogOdgovora >= odgovori.size()) {
+                throwAlert("Kviz kojeg importujete ima pitanje neispravanim indexom tačnog odgovora!");
+                return;
             }
 
             for (Pitanje p : importovanaPitanja)
@@ -355,40 +429,32 @@ public class DodajKvizAkt extends AppCompatActivity {
                     return;
                 }
 
-            if (brojOdgovora == 0 || brojOdgovora != odgovori.size()) {
-                throwAlert("Kviz kojeg importujete ima neispravan broj odgovora!");
-                return;
-            }
-
-            if (indexTacnogOdgovora < 0 || indexTacnogOdgovora >= odgovori.size()) {
-                throwAlert("Kviz kojeg importujete ima neispravan index tačnog odgovora!");
-                return;
-            }
-
             Pitanje p = new Pitanje(nazivPitanja, nazivPitanja, odgovori.get(indexTacnogOdgovora));
             p.setOdgovori(odgovori);
             importovanaPitanja.add(p);
         }
 
-        etNaziv.setText(imeKviza);
-
-        boolean postojiKategorija = false;
         int indexKategorijeSpiner = 0;
-        for (int i = 0; i<kategorije.size()-1; i++) {
+        for (int i = 0; i < kategorije.size() - 1; i++) {
             Kategorija ka = kategorije.get(i);
-            if (ka.getNaziv().equals(nazivKategorijeKviza)){
+            if (ka.getNaziv().equals(nazivKategorijeKviza)) {
                 indexKategorijeSpiner = i;
                 kategorijaKviza = ka;
-                postojiKategorija = true;
                 break;
             }
         }
 
-        if(!postojiKategorija){
+        if (kategorijaKviza == null) {
+            kategorijaKviza = new Kategorija(nazivKategorijeKviza, "-3");
             kategorije.add(kategorije.size() - 1, kategorijaKviza);
             indexKategorijeSpiner = kategorije.size() - 2;
+            patchCategoryDocumentOnFirebase(kategorijaKviza);
         }
 
+        for (Pitanje p : importovanaPitanja)
+            patchQeustionDocumentOnFirebase(p);
+
+        etNaziv.setText(imeKviza);
         sAdapter.notifyDataSetChanged();
         spKategorije.setSelection(indexKategorijeSpiner);
         dodana.clear();

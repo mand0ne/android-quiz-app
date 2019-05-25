@@ -2,23 +2,33 @@ package ba.unsa.etf.rma.klase;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-
+import java.util.UUID;
 import java.util.ArrayList;
 
 public class Kviz implements Comparable<Kviz>, Parcelable {
     private String naziv;
     private ArrayList<Pitanje> pitanja = new ArrayList<>();
     private Kategorija kategorija;
+    private String firebaseId;
+
+    public Kviz(String naziv, ArrayList<Pitanje> pitanja, Kategorija kategorija, String firebaseId) {
+        this.naziv = naziv;
+        this.pitanja = pitanja;
+        this.kategorija = kategorija;
+        this.firebaseId = firebaseId;
+    }
 
     public Kviz(String naziv, Kategorija kategorija) {
         this.naziv = naziv;
         this.kategorija = kategorija;
+        generisiFirebaseId();
     }
 
     public Kviz(String naziv, Kategorija kategorija, ArrayList<Pitanje> pitanja) {
         this.naziv = naziv;
         this.kategorija = kategorija;
         this.pitanja = pitanja;
+        generisiFirebaseId();
     }
 
 
@@ -54,9 +64,17 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         return this.naziv.equals(((Kviz) obj).naziv);
     }
 
+    public void generisiFirebaseId(){
+        firebaseId = "QUIZ[" + UUID.randomUUID().toString().toUpperCase() + "]";
+    }
+
+    public String firebaseId(){
+        return firebaseId;
+    }
+
     @Override
     public int hashCode() {
-        return naziv.hashCode() + kategorija.getId().hashCode();
+        return (naziv + pitanja.size()).hashCode() + kategorija.hashCode();
     }
 
     @Override
@@ -74,6 +92,7 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         dest.writeString(this.naziv);
         dest.writeList(this.pitanja);
         dest.writeParcelable(this.kategorija, flags);
+        dest.writeString(this.firebaseId);
     }
 
     private Kviz(Parcel in) {
@@ -81,6 +100,7 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         this.pitanja = new ArrayList<>();
         in.readList(this.pitanja, Pitanje.class.getClassLoader());
         this.kategorija = in.readParcelable(Kategorija.class.getClassLoader());
+        this.firebaseId = in.readString();
     }
 
     public static final Parcelable.Creator<Kviz> CREATOR = new Parcelable.Creator<Kviz>() {

@@ -20,7 +20,7 @@ class FirestoreJsonParser {
     }
 
     Kategorija parsirajDokumentKategorije(String[] kategorija) {
-        String firebaseId = kategorija[0].substring(kategorija[0].indexOf("/CAT") + 1, kategorija[0].indexOf("\n") - 2);
+        String firebaseId = kategorija[0].substring(kategorija[0].indexOf("/CAT") + 1, kategorija[0].length() - 2);
         String naziv = null, idIkonice = null;
         try {
 
@@ -57,7 +57,7 @@ class FirestoreJsonParser {
     }
 
     Pitanje parsirajDokumentPitanje(String[] pitanje) {
-        String firebaseId = pitanje[0].substring(pitanje[0].indexOf("/QUES") + 1, pitanje[0].indexOf("\n") - 2);
+        String firebaseId = pitanje[0].substring(pitanje[0].indexOf("/QUES") + 1, pitanje[0].length() - 2);
         String naziv = null;
         Integer indexTacnog = null;
         ArrayList<String> odgovori = new ArrayList<>();
@@ -108,7 +108,7 @@ class FirestoreJsonParser {
     }
 
     Kviz parsirajDokumentKviz(String[] kviz, ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja){
-        String firebaseId = kviz[0].substring(kviz[0].indexOf("/QUES") + 1, kviz[0].indexOf("\n") - 2);
+        String firebaseId = kviz[0].substring(kviz[0].indexOf("/QUES") + 1, kviz[0].length() - 2);
         String naziv = null, idKategorije = null;
         ArrayList<String> idPitanja = new ArrayList<>();
 
@@ -132,7 +132,7 @@ class FirestoreJsonParser {
 
         Kategorija kategorijaKviza = null;
         ArrayList<Pitanje> pitanjaKviza = new ArrayList<>();
-        
+
         for (Kategorija k : kategorije)
             if (k.firebaseId().equals(idKategorije))
                 kategorijaKviza = k;

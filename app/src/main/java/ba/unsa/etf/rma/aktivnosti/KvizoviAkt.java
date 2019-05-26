@@ -1,5 +1,6 @@
 package ba.unsa.etf.rma.aktivnosti;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -23,6 +24,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
@@ -34,6 +37,7 @@ import ba.unsa.etf.rma.klase.HttpGetRequest;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.Kviz;
 import ba.unsa.etf.rma.klase.NDSpinner;
+import ba.unsa.etf.rma.klase.Pitanje;
 
 public class KvizoviAkt extends AppCompatActivity {
 
@@ -47,6 +51,7 @@ public class KvizoviAkt extends AppCompatActivity {
 
     private ArrayList<Kategorija> kategorije = new ArrayList<>();
     private ArrayList<Kviz> sviKvizovi = new ArrayList<>();
+    private ArrayList<Pitanje> svaPitanja = new ArrayList<>();
     private ArrayList<Kviz> prikazaniKvizovi = new ArrayList<>();
 
     private ArrayAdapter<Kategorija> sAdapter = null;
@@ -64,13 +69,11 @@ public class KvizoviAkt extends AppCompatActivity {
         setContentView(R.layout.activity_kvizovi_akt);
         context = KvizoviAkt.this;
 
-        new getAccessToken().execute();
+        new getAccessToken(this).execute();
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         dpwidth = displayMetrics.widthPixels / displayMetrics.density;
-
-        kategorije.add(new Kategorija("Svi", "-1"));
 
         if (savedInstanceState != null) {
             sviKvizovi = savedInstanceState.getParcelableArrayList("kvizovi");
@@ -168,7 +171,6 @@ public class KvizoviAkt extends AppCompatActivity {
     }
 
 
-
     @Override
     protected void onStart() {
         super.onStart();
@@ -240,13 +242,30 @@ public class KvizoviAkt extends AppCompatActivity {
 
 
     public void aktivnostDodajKviz() {
-       /* Intent intent = new Intent(context, DodajKvizAkt.class);
+        Intent intent = new Intent(context, DodajKvizAkt.class);
         intent.putParcelableArrayListExtra("kategorije", kategorije);
         intent.putParcelableArrayListExtra("kvizovi", sviKvizovi);
         intent.putExtra("requestCode", DODAJ_KVIZ);
         intent.putExtra("token", TOKEN);
         startActivityForResult(intent, DODAJ_KVIZ);
-    */
+    }
+
+    public void setSvaPitanja(ArrayList<Pitanje> pitanja) {
+        Toast.makeText(context, "POZVAN", Toast.LENGTH_SHORT).show();
+        svaPitanja.clear();
+        svaPitanja.addAll(pitanja);
+    }
+
+    public void setSviKvizovi(ArrayList<Kviz> kvizovi) {
+        sviKvizovi.clear();
+        sviKvizovi.addAll(kvizovi);
+        adapter.notifyDataSetChanged();
+    }
+
+    public void setKategorije(ArrayList<Kategorija> kategorije){
+        this.kategorije.clear();
+        this.kategorije.addAll(kategorije);
+        sAdapter.notifyDataSetChanged();
     }
 
     public void aktivnostUrediKviz(Kviz kviz) {
@@ -270,49 +289,46 @@ public class KvizoviAkt extends AppCompatActivity {
     }
 
 
-    class getAccessToken extends AsyncTask<String, Void, Void> {
-        String TAG = getClass().getSimpleName();
+    private static class getAccessToken extends AsyncTask<String, Void, Void> {
+        private WeakReference<Activity> activityWeakReference;
+        private String TAG = getClass().getSimpleName();
 
+        getAccessToken(Activity activityWeakReference) {
+            this.activityWeakReference = new WeakReference<>(activityWeakReference);
+        }
+
+        @Override
         protected void onPreExecute() {
             super.onPreExecute();
+
+            KvizoviAkt kvizoviAkt = (KvizoviAkt) activityWeakReference.get();
+            if(kvizoviAkt == null || kvizoviAkt.isFinishing()){
+                this.cancel(true);
+                return;
+            }
         }
 
         protected Void doInBackground(String... params) {
             try {
-                InputStream is = context.getResources().openRawResource(R.raw.secret);
+                KvizoviAkt kvizoviAkt = (KvizoviAkt) activityWeakReference.get();
+                InputStream is = kvizoviAkt.context.getResources().openRawResource(R.raw.secret);
                 GoogleCredential credentials = GoogleCredential.fromStream(is)
                         .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/datastore"));
                 credentials.refreshToken();
-                TOKEN = credentials.getAccessToken();
-                Log.d(TAG, "TOKEN: " + TOKEN);
+                kvizoviAkt.TOKEN = credentials.getAccessToken();
+                Log.d(TAG, "TOKEN: " + kvizoviAkt.TOKEN);
             } catch (Exception e) {
                 Log.d(TAG, "doInBackground: " + e.getMessage());
             }
             return null;
         }
-    }
-
-
-    class MyTask extends AsyncTask<Integer, Integer, String> {
-        @Override
-        protected String doInBackground(Integer... params) {
-            int count = 1;
-            for (; count <= params[0]; count++) {
-                try {
-                    Thread.sleep(1000);
-                    publishProgress(count);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            return "Task Completed.";
-        }
 
         @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            Toast.makeText(context, s, Toast.LENGTH_LONG).show();
-            findViewById(R.id.loadingPanel).setVisibility(View.GONE);
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            KvizoviAkt kvizoviAkt = (KvizoviAkt) activityWeakReference.get();
+            new HttpGetRequest(kvizoviAkt).execute("ALL", kvizoviAkt.TOKEN);
         }
     }
+
 }

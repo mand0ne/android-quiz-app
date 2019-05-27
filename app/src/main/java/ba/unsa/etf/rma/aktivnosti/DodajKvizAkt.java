@@ -25,11 +25,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutionException;
 
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.klase.CustomAdapter;
+import ba.unsa.etf.rma.klase.HttpGetRequest;
 import ba.unsa.etf.rma.klase.HttpPostRequest;
+import ba.unsa.etf.rma.klase.IActivity;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.Kviz;
 import ba.unsa.etf.rma.klase.NDSpinner;
@@ -37,7 +41,7 @@ import ba.unsa.etf.rma.klase.Pitanje;
 
 import static ba.unsa.etf.rma.aktivnosti.KvizoviAkt.PROMIJENI_KVIZ;
 
-public class DodajKvizAkt extends AppCompatActivity {
+public class DodajKvizAkt extends AppCompatActivity implements IActivity {
 
     static final int DODAJ_PITANJE = 40;
     static final int DODAJ_KATEGORIJU = 41;
@@ -69,7 +73,6 @@ public class DodajKvizAkt extends AppCompatActivity {
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 
         ListView lvDodanaPitanja = findViewById(R.id.lvDodanaPitanja);
-        ListView lvMogucaPitanja = findViewById(R.id.lvMogucaPitanja);
         spKategorije = findViewById(R.id.spKategorije);
         Button btnDodajKviz = findViewById(R.id.btnDodajKviz);
         etNaziv = findViewById(R.id.etNaziv);
@@ -97,8 +100,7 @@ public class DodajKvizAkt extends AppCompatActivity {
         View ldFooterView;
         lvDodanaPitanja.addFooterView(ldFooterView = adapterDodana.getFooterView(lvDodanaPitanja, "Dodaj pitanje"));
 
-        adapterMoguca = new ArrayAdapter<>(this, R.layout.element_liste, R.id.naziv, moguca);
-        lvMogucaPitanja.setAdapter(adapterMoguca);
+        new HttpGetRequest(this).execute("QUESTIONS", TOKEN);
 
         if (intent.getIntExtra("requestCode", 0) == PROMIJENI_KVIZ) {
             staroImeKviza = trenutniKviz.getNaziv();
@@ -116,10 +118,8 @@ public class DodajKvizAkt extends AppCompatActivity {
                         trenutniKviz.setKategorija((Kategorija) spKategorije.getSelectedItem());
                         trenutniKviz.setPitanja(dodana);
 
-                        intent.putExtra("kviz", trenutniKviz);
-                        if (intent.getIntExtra("requestCode", 0) == PROMIJENI_KVIZ)
-                            intent.putExtra("staroImeKviza", staroImeKviza);
-
+                        kvizovi.add(trenutniKviz);
+                        intent.putParcelableArrayListExtra("kvizovi", kvizovi);
                         intent.putParcelableArrayListExtra("kategorije", kategorije);
                         setResult(RESULT_OK, intent);
 
@@ -159,14 +159,6 @@ public class DodajKvizAkt extends AppCompatActivity {
                 exchange(dodana, moguca, position);
             }
         });
-
-        lvMogucaPitanja.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                exchange(moguca, dodana, position);
-            }
-        });
-
 
         // Klik na zadnji element spinnera za dodavanje kategorije
         spKategorije.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -248,12 +240,22 @@ public class DodajKvizAkt extends AppCompatActivity {
         boolean changeMode = getIntent().getIntExtra("requestCode", 0) == PROMIJENI_KVIZ;
         String naziv = etNaziv.getText().toString();
 
-        if (!changeMode || !naziv.equalsIgnoreCase(staroImeKviza))
-            for (Kviz k : kvizovi)
-                if (k.getNaziv().equalsIgnoreCase(naziv)) {
-                    etNaziv.setError("Kviz sa istim imenom već postoji!");
-                    return true;
-                }
+        if (!changeMode || !naziv.equalsIgnoreCase(staroImeKviza)){
+
+            try {
+                new HttpGetRequest(DodajKvizAkt.this).execute("QUIZ-VALID", TOKEN, "CAT[-ALL-]").get();
+
+                for (Kviz k : kvizovi)
+                    if (k.getNaziv().equalsIgnoreCase(naziv)) {
+                        etNaziv.setError("Kviz sa istim imenom već postoji!");
+                        return true;
+                    }
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
 
         return false;
     }
@@ -468,6 +470,28 @@ public class DodajKvizAkt extends AppCompatActivity {
         alertDialog.setMessage(poruka);
         alertDialog.create();
         alertDialog.show();
+    }
+
+    public void azurirajMoguca(ArrayList<Pitanje> mogucaPitanja){
+        moguca = new ArrayList<>(mogucaPitanja);
+        moguca.removeAll(dodana);
+        adapterMoguca = new ArrayAdapter<>(this, R.layout.element_liste, R.id.naziv, moguca);
+        ListView lvMogucaPitanja = findViewById(R.id.lvMogucaPitanja);
+        lvMogucaPitanja.setAdapter(adapterMoguca);
+
+        lvMogucaPitanja.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                exchange(moguca, dodana, position);
+            }
+        });
+
+
+    }
+
+    @Override
+    public void azurirajKvizove(ArrayList<Kviz> noviKvizovi) {
+        kvizovi = noviKvizovi;
     }
 }
 

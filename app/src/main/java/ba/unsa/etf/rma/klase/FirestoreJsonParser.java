@@ -108,7 +108,7 @@ class FirestoreJsonParser {
     }
 
     Kviz parsirajDokumentKviz(String[] kviz, ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja){
-        String firebaseId = kviz[0].substring(kviz[0].indexOf("/QUES") + 1, kviz[0].length() - 2);
+        String firebaseId = kviz[0].substring(kviz[0].indexOf("/Kvizovi/") + 9, kviz[0].length() - 2);
         String naziv = null, idKategorije = null;
         ArrayList<String> idPitanja = new ArrayList<>();
 
@@ -149,4 +149,47 @@ class FirestoreJsonParser {
 
         return new Kviz(naziv, pitanjaKviza, kategorijaKviza, firebaseId);
     }
+
+
+/*
+     RangListaKviz parsirajKvizRangListe(String result) {
+        if (result.equals("{}"))
+            return null;
+
+        String[] rangListaJson = result.split("\\{\n\"name\": ");
+
+        for (int i = 1; i < rangListaCollection.length; i++) {
+
+            String rangListaDocument = rangListaCollection[i];
+
+            String[] rows = rangListaDocument.split("\n");
+
+            String id = rows[0].substring(rows[0].length() - 38, rows[0].length() - 2);
+            String nazivKviza = "";
+            String imeIgraca = "";
+            int pozicija = 0;
+            double procenat = 0;
+
+            for (int j = 1; j < rows.length; j++) {
+                if (rows[j].contains("\"nazivKviza\": "))
+                    nazivKviza = rows[j + 1].substring(16, rows[j + 1].length() - 1);
+
+                if (rows[j].contains("\"imeIgraca\": "))
+                    imeIgraca = rows[j + 1].substring(16, rows[j + 1].length() - 1);
+
+                if (rows[j].contains("\"pozicija\": "))
+                    pozicija = Integer.parseInt(rows[j + 1].substring(17, rows[j + 1].length() - 1));
+
+                if (rows[j].contains("\"procenatTacnih\": "))
+                    procenat = Double.parseDouble(rows[j + 1].substring(15));
+            }
+
+            KvizRangLista rangLista = new RangListaItem(imeIgraca, nazivKviza, procenat, pozicija);
+            rangLista.setIdDokumenta(id);
+            rangListaArray.add(rangLista);
+        }
+
+    }
+
+*/
 }

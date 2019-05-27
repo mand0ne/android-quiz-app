@@ -13,6 +13,7 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.aktivnosti.KvizoviAkt;
@@ -38,9 +39,12 @@ public class DetailFrag extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        kategorije = new ArrayList<>(getArguments().<Kategorija>getParcelableArrayList("kategorije"));
+
+        assert getArguments() != null;
+        kategorije = new ArrayList<>(Objects.requireNonNull(getArguments().<Kategorija>getParcelableArrayList("kategorije")));
+
         trenutnaKategorija = kategorije.get(0);
-        sviKvizoviFragment = new ArrayList<>(getArguments().<Kviz>getParcelableArrayList("kvizovi"));
+        sviKvizoviFragment = new ArrayList<>(Objects.requireNonNull(getArguments().<Kviz>getParcelableArrayList("kvizovi")));
         sviKvizoviFragment.add(new Kviz("Dodaj kviz", new Kategorija("-100", "-100"), null));
         prikazaniKvizoviFragment.addAll(sviKvizoviFragment);
     }
@@ -56,7 +60,7 @@ public class DetailFrag extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        gridKvizovi = getView().findViewById(R.id.gridKvizovi);
+        gridKvizovi = Objects.requireNonNull(getView()).findViewById(R.id.gridKvizovi);
     }
 
     @Override
@@ -66,7 +70,7 @@ public class DetailFrag extends Fragment {
         kvizAdapter = new GridViewAdapter(getContext(), prikazaniKvizoviFragment);
         gridKvizovi.setAdapter(kvizAdapter);
 
-        model = ViewModelProviders.of(getActivity()).get(KvizoviViewModel.class);
+        model = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(KvizoviViewModel.class);
         model.getKategorija().observe(getViewLifecycleOwner(), new Observer<Kategorija>() {
             @Override
             public void onChanged(@Nullable Kategorija kategorija) {
@@ -83,9 +87,9 @@ public class DetailFrag extends Fragment {
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
                 if (kliknutiKviz.getNaziv().equals("Dodaj kviz"))
-                    ((KvizoviAkt) getActivity()).aktivnostDodajKviz();
+                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).aktivnostDodajKviz();
                 else
-                    ((KvizoviAkt) getActivity()).aktivnostUrediKviz(kliknutiKviz);
+                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).aktivnostUrediKviz(kliknutiKviz);
 
                 return true;
             }
@@ -96,7 +100,9 @@ public class DetailFrag extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
                 if (!(kliknutiKviz.getNaziv().equals("Dodaj kviz")))
-                    ((KvizoviAkt) getActivity()).aktivnostIgrajKviz(kliknutiKviz);
+                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).aktivnostIgrajKviz(kliknutiKviz);
+                else
+                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).aktivnostDodajKviz();
             }
         });
     }

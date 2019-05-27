@@ -19,8 +19,10 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 import ba.unsa.etf.rma.R;
+import ba.unsa.etf.rma.klase.HttpGetRequest;
 import ba.unsa.etf.rma.klase.Pitanje;
 
 public class DodajPitanjeAkt extends AppCompatActivity {
@@ -31,8 +33,8 @@ public class DodajPitanjeAkt extends AppCompatActivity {
     private ArrayAdapter<String> adapter;
     private ArrayList<String> odgovori = new ArrayList<>();
     private Pitanje novoPitanje = null;
-
     private ArrayList<Pitanje> svaPitanja = new ArrayList<>();
+    private String TOKEN;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,10 +51,9 @@ public class DodajPitanjeAkt extends AppCompatActivity {
         Button btnDodajPitanje = findViewById(R.id.btnDodajPitanje);
 
         Intent intent = getIntent();
-
-        // U sustini nema smisla slati citav Objekat Kviz, gubi se na performansama
         svaPitanja.addAll(intent.<Pitanje>getParcelableArrayListExtra("dodana"));
         svaPitanja.addAll(intent.<Pitanje>getParcelableArrayListExtra("moguca"));
+        TOKEN = intent.getStringExtra("token");
 
         adapter = (new ArrayAdapter<String>(this, R.layout.element_odgovora, R.id.odgovor, odgovori) {
             @SuppressWarnings("NullableProblems")
@@ -135,7 +136,9 @@ public class DodajPitanjeAkt extends AppCompatActivity {
                         Intent i = new Intent();
                         novoPitanje.setNaziv(etNaziv.getText().toString());
                         novoPitanje.setTekstPitanja(etNaziv.getText().toString());
+
                         i.putExtra("novoPitanje", novoPitanje);
+                        i.putParcelableArrayListExtra("svaPitanja", svaPitanja);
                         setResult(RESULT_OK, i);
                         finish();
                     } else
@@ -150,13 +153,31 @@ public class DodajPitanjeAkt extends AppCompatActivity {
         });
     }
 
+    @Override
+    public void onBackPressed() {
+        Intent i = new Intent();
+        i.putParcelableArrayListExtra("svaPitanja", svaPitanja);
+        setResult(RESULT_CANCELED, i);
+        finish();
+    }
+
     boolean validanOdgovor() {
         return etOdgovor != null && !etOdgovor.getText().toString().isEmpty() && etOdgovor.getText() != null && etOdgovor.getText().length() != 0;
     }
 
     boolean postojiPitanje() {
+        String naziv = etNaziv.getText().toString();
+
+        try {
+            new HttpGetRequest(DodajPitanjeAkt.this).execute("QUESTION-VALID", TOKEN).get();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         for (Pitanje p : svaPitanja)
-            if (p.getNaziv().equals(etNaziv.getText().toString()))
+            if (p.getNaziv().equals(naziv))
                 return true;
 
         return false;
@@ -165,5 +186,9 @@ public class DodajPitanjeAkt extends AppCompatActivity {
     boolean validnoPitanje() {
         return etNaziv.getText().length() != 0
                 && novoPitanje.getTacan() != null;
+    }
+
+    public void azurirajPitanja(ArrayList<Pitanje> pitanja){
+        svaPitanja = pitanja;
     }
 }

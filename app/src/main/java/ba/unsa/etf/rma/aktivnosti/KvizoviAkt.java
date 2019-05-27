@@ -1,9 +1,14 @@
 package ba.unsa.etf.rma.aktivnosti;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentManager;
@@ -15,18 +20,12 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.common.collect.Lists;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
@@ -39,7 +38,6 @@ import ba.unsa.etf.rma.klase.IActivity;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.Kviz;
 import ba.unsa.etf.rma.klase.NDSpinner;
-import ba.unsa.etf.rma.klase.Pitanje;
 
 public class KvizoviAkt extends AppCompatActivity implements IActivity {
 
@@ -75,6 +73,7 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
             findViewById(R.id.loadingPanel).setVisibility(View.INVISIBLE);
             start();
         } else {
+            promptConnection(context);
             try {
                 new getAccessToken(this).execute().get();
             } catch (ExecutionException e) {
@@ -89,6 +88,9 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         dpwidth = displayMetrics.widthPixels / displayMetrics.density;
+
+        if (kategorije.isEmpty())
+            kategorije.add(new Kategorija("Svi", "-1"));
 
         if (dpwidth >= 550) {
             Intent intent = getIntent();
@@ -163,20 +165,6 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
 
                                                        if (ka != null) {
                                                            findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
-
-                        /*if (ka.getId().equals("-1")) {
-                            prikazaniKvizovi.clear();
-                            prikazaniKvizovi.addAll(sviKvizovi);
-                        } else {
-                            prikazaniKvizovi.clear();
-                            for (Kviz k : sviKvizovi)
-                                if (k.getKategorija() != null && k.getKategorija().getNaziv().equals(ka.getNaziv())
-                                        || ka.getId().equals("-1"))
-                                    prikazaniKvizovi.add(k);
-                        }
-
-                        */
-
                                                            try {
                                                                new HttpGetRequest(KvizoviAkt.this).execute("QUIZ-FILTER", TOKEN, ka.firebaseId()).get();
                                                            } catch (ExecutionException e) {
@@ -186,6 +174,7 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
                                                            }
                                                        }
                                                    }
+
 
                                                    @Override
                                                    public void onNothingSelected(AdapterView<?> parent) {
@@ -261,11 +250,11 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
     public void azurirajKvizove(ArrayList<Kviz> noviKvizovi) {
         sviKvizovi.clear();
         prikazaniKvizovi.clear();
-        for(Kviz k : noviKvizovi){
+        for (Kviz k : noviKvizovi) {
             sviKvizovi.add(k);
             prikazaniKvizovi.add(k);
         }
-        if(adapter != null)
+        if (adapter != null)
             adapter.notifyDataSetChanged();
     }
 
@@ -285,7 +274,6 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
         this.kategorije.clear();
         this.kategorije.addAll(kategorije);
     }
-
 
     // U slucaju privremenog destroy-a, recimo rotacija ekrana
     @Override
@@ -310,10 +298,8 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
             super.onPreExecute();
 
             KvizoviAkt kvizoviAkt = (KvizoviAkt) activityWeakReference.get();
-            if (kvizoviAkt == null || kvizoviAkt.isFinishing()) {
+            if (kvizoviAkt == null || kvizoviAkt.isFinishing())
                 this.cancel(true);
-                return;
-            }
         }
 
         protected Void doInBackground(String... params) {
@@ -337,6 +323,44 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
             KvizoviAkt kvizoviAkt = (KvizoviAkt) activityWeakReference.get();
             new HttpGetRequest(kvizoviAkt).execute("ALL", kvizoviAkt.TOKEN);
         }
+    }
+
+    public void promptConnection(final Context context) {
+        boolean haveConnectedWifi = false;
+        boolean haveConnectedMobile = false;
+
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo[] netInfo = connectivityManager.getAllNetworkInfo();
+        for (NetworkInfo ni : netInfo) {
+            if (ni.getTypeName().equalsIgnoreCase("WIFI"))
+                if (ni.isConnected())
+                    haveConnectedWifi = true;
+            if (ni.getTypeName().equalsIgnoreCase("MOBILE"))
+                if (ni.isConnected())
+                    haveConnectedMobile = true;
+        }
+
+        if(!haveConnectedWifi && !haveConnectedMobile)
+            showDialog(context);
+    }
+
+    private void showDialog(final Context context) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Connect to the internet or quit")
+                .setCancelable(false)
+                .setNegativeButton("Connect", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+                    }
+                })
+                .setPositiveButton("Quit", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        ((KvizoviAkt)context).finishAndRemoveTask();
+                        System.exit(0);
+                    }
+                });
+        AlertDialog alert = builder.create();
+        alert.show();
     }
 
 }

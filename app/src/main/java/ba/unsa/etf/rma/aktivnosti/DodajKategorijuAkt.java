@@ -12,9 +12,12 @@ import com.maltaisn.icondialog.Icon;
 import com.maltaisn.icondialog.IconDialog;
 
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 import ba.unsa.etf.rma.R;
+import ba.unsa.etf.rma.klase.HttpGetRequest;
 import ba.unsa.etf.rma.klase.Kategorija;
+import ba.unsa.etf.rma.klase.Kviz;
 
 public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.Callback {
 
@@ -22,6 +25,7 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
     private EditText etIkona;
     private Icon[] selectedIcons;
     private ArrayList<Kategorija> postojeceKategorije;
+    private String TOKEN;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +41,7 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         Intent intent = getIntent();
         final IconDialog iconDialog = new IconDialog();
         postojeceKategorije = intent.getParcelableArrayListExtra("kategorije");
+        TOKEN = intent.getStringExtra("token");
 
         btnDodajIkonu.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -53,7 +58,9 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
                     if (!postojiKategorija()) {
                         Kategorija novaKategorija = new Kategorija(etNaziv.getText().toString(), etIkona.getText().toString());
                         Intent i = new Intent();
-                        i.putExtra("novaKategorija", novaKategorija);
+
+                        postojeceKategorije.add(novaKategorija);
+                        i.putParcelableArrayListExtra("kategorije", postojeceKategorije);
                         setResult(RESULT_OK, i);
                         finish();
                     } else
@@ -70,9 +77,27 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
 
     }
 
+    @Override
+    public void onBackPressed() {
+        Intent i = new Intent();
+        i.putParcelableArrayListExtra("kategorije", postojeceKategorije);
+        setResult(RESULT_CANCELED, i);
+        finish();
+    }
+
     private boolean postojiKategorija() {
+        String naziv = etNaziv.getText().toString();
+
+        try {
+            new HttpGetRequest(DodajKategorijuAkt.this).execute("CATEGORY-VALID", TOKEN).get();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         for (Kategorija ka : postojeceKategorije)
-            if (ka.getNaziv().equals(etNaziv.getText().toString()))
+            if (ka.getNaziv().equals(naziv))
                 return true;
 
         return false;
@@ -87,5 +112,9 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
     public void onIconDialogIconsSelected(Icon[] icons) {
         selectedIcons = icons;
         etIkona.setText(String.valueOf(selectedIcons[0].getId()));
+    }
+
+    public void azurirajKategorije(ArrayList<Kategorija> kategorije) {
+        postojeceKategorije = kategorije;
     }
 }

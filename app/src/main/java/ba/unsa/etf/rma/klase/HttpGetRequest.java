@@ -22,7 +22,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import ba.unsa.etf.rma.R;
+import ba.unsa.etf.rma.aktivnosti.DodajKategorijuAkt;
 import ba.unsa.etf.rma.aktivnosti.DodajKvizAkt;
+import ba.unsa.etf.rma.aktivnosti.DodajPitanjeAkt;
 import ba.unsa.etf.rma.aktivnosti.KvizoviAkt;
 
 public class HttpGetRequest extends AsyncTask<String, Void, String> {
@@ -68,8 +70,14 @@ public class HttpGetRequest extends AsyncTask<String, Void, String> {
                     kvizovi = quizFilter(strings[2]);
                     break;
                 case "QUIZ-VALID":
-                    kvizovi = quizFilter(strings[2]);
-                    ((IActivity)activityWeakReference.get()).azurirajKvizove(kvizovi);
+                    ((IActivity)activityWeakReference.get()).azurirajKvizove(quizFilter(strings[2]));
+                    break;
+                case "CATEGORY-VALID":
+                    ((DodajKategorijuAkt)activityWeakReference.get()).azurirajKategorije(importCategories());
+                    break;
+                case "QUESTION-VALID":
+                    ((DodajPitanjeAkt)activityWeakReference.get()).azurirajPitanja(importQuestions());
+                    break;
                 default:
                     break;
             }

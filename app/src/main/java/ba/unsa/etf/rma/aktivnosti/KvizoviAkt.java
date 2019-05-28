@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -33,33 +34,48 @@ import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.fragmenti.DetailFrag;
 import ba.unsa.etf.rma.fragmenti.ListaFrag;
 import ba.unsa.etf.rma.klase.CustomAdapter;
+import ba.unsa.etf.rma.klase.FirebaseIntentService;
+import ba.unsa.etf.rma.klase.FirebaseResultReceiver;
 import ba.unsa.etf.rma.klase.HttpGetRequest;
-import ba.unsa.etf.rma.klase.IActivity;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.Kviz;
 import ba.unsa.etf.rma.klase.NDSpinner;
 
-public class KvizoviAkt extends AppCompatActivity implements IActivity {
+public class KvizoviAkt extends AppCompatActivity implements FirebaseResultReceiver.Receiver {
 
     static final int DODAJ_KVIZ = 30;
     static final int PROMIJENI_KVIZ = 31;
 
     private Context context;
-    private ListView lvKvizovi;
-    private NDSpinner spPostojeceKategorije;
-    private View lvFooterView;
+    private ListView listViewKvizovi;
+    private View listViewFooter;
+    private NDSpinner spinnerKategorije;
+
+    public ArrayList<Kategorija> getKategorije() {
+        return kategorije;
+    }
+
+    public ArrayList<Kviz> getKvizovi() {
+        return kvizovi;
+    }
 
     private ArrayList<Kategorija> kategorije = new ArrayList<>();
-    private ArrayList<Kviz> sviKvizovi = new ArrayList<>();
-    private ArrayList<Kviz> prikazaniKvizovi = new ArrayList<>();
+    private ArrayList<Kviz> kvizovi = new ArrayList<>();
 
-    private ArrayAdapter<Kategorija> sAdapter = null;
-    private CustomAdapter adapter = null;
+    private CustomAdapter listViewAdapter = null;
+    private ArrayAdapter<Kategorija> spinnerAdapter = null;
+
 
     private double dpwidth = 0.0;
     private ListaFrag listaFrag;
     private DetailFrag detailFrag;
+
+    public String getTOKEN() {
+        return TOKEN;
+    }
+
     private String TOKEN = ""; // firestore access_token
+    public FirebaseResultReceiver receiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,18 +83,33 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
         setContentView(R.layout.activity_kvizovi_akt);
         context = KvizoviAkt.this;
 
+        receiver = new FirebaseResultReceiver(new Handler());
+        receiver.setReceiver(this);
+
         if (savedInstanceState != null) {
-            sviKvizovi = savedInstanceState.getParcelableArrayList("kvizovi");
+            kvizovi = savedInstanceState.getParcelableArrayList("kvizovi");
             kategorije = savedInstanceState.getParcelableArrayList("kategorije");
+            TOKEN = savedInstanceState.getString("token");
+            if(TOKEN == null) {
+                try {
+                    new getAccessToken(this).execute().get();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
             findViewById(R.id.loadingPanel).setVisibility(View.INVISIBLE);
             start();
         } else {
             promptConnection(context);
             try {
                 new getAccessToken(this).execute().get();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
+                // ovdje jednostavno mora get.. mislim ne mora
+                // ali nema smisla komplikovati previse na prvom ucitavanju aplikacije...
+                start();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -100,7 +131,7 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
 
             Bundle b = new Bundle();
             b.putParcelable("kviz", trenutniKviz);
-            b.putParcelableArrayList("kvizovi", sviKvizovi);
+            b.putParcelableArrayList("kvizovi", kvizovi);
             b.putParcelableArrayList("kategorije", kategorije);
 
             listaFrag = new ListaFrag();
@@ -112,34 +143,34 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
             fragmentManager.beginTransaction().replace(R.id.listPlace, listaFrag).commit();
             fragmentManager.beginTransaction().replace(R.id.detailPlace, detailFrag).commit();
         } else {
-
-            lvKvizovi = findViewById(R.id.lvKvizovi);
-            spPostojeceKategorije = findViewById(R.id.spPostojeceKategorije);
+            listViewKvizovi = findViewById(R.id.lvKvizovi);
+            spinnerKategorije = findViewById(R.id.spPostojeceKategorije);
 
             initialize();
 
-            sAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, kategorije);
-            sAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            spPostojeceKategorije.setAdapter(sAdapter);
+            spinnerAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, kategorije);
+            spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinnerKategorije.setAdapter(spinnerAdapter);
 
             // Klik na zadnji element liste koji je za dodavanje novog kviza
-            lvFooterView.setOnClickListener(new View.OnClickListener() {
-                                                @Override
-                                                public void onClick(View v) {
-                                                    aktivnostDodajKviz();
-                                                }
-                                            }
+            listViewFooter.setOnClickListener(new View.OnClickListener() {
+                                                  @Override
+                                                  public void onClick(View v) {
+                                                      aktivnostDodajKviz();
+                                                  }
+                                              }
             );
 
-            lvFooterView.setOnLongClickListener(new View.OnLongClickListener() {
+            listViewFooter.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    return lvFooterView.performClick();
+                    aktivnostDodajKviz();
+                    return true;
                 }
             });
 
             // Klik na kviz za uredivanje
-            lvKvizovi.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            listViewKvizovi.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
                 @Override
                 public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                     Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
@@ -148,7 +179,7 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
                 }
             });
 
-            lvKvizovi.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            listViewKvizovi.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
@@ -156,48 +187,44 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
                 }
             });
 
-            spPostojeceKategorije.post(new Runnable() {
-                                           public void run() {
-                                               spPostojeceKategorije.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                                                   @Override
-                                                   public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                                                       Kategorija ka = (Kategorija) spPostojeceKategorije.getSelectedItem();
+            spinnerKategorije.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    Kategorija selektovanaKategorija = (Kategorija) spinnerKategorije.getSelectedItem();
 
-                                                       if (ka != null) {
-                                                           findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
-                                                           try {
-                                                               new HttpGetRequest(KvizoviAkt.this).execute("QUIZ-FILTER", TOKEN, ka.firebaseId()).get();
-                                                           } catch (ExecutionException e) {
-                                                               e.printStackTrace();
-                                                           } catch (InterruptedException e) {
-                                                               e.printStackTrace();
-                                                           }
-                                                       }
-                                                   }
+                    if (selektovanaKategorija != null) {
+                        findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
+                        try {
+                            final Intent intent = new Intent(Intent.ACTION_SYNC, null, context, FirebaseIntentService.class);
+                            intent.putExtra("receiver", receiver);
+                            intent.putExtra("token", TOKEN);
+                            intent.putExtra("action", FirebaseIntentService.FILTRIRAJ_KVIZOVE);
+                            intent.putExtra("kategorijaId", selektovanaKategorija.firebaseId());
+                            startService(intent);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
 
-
-                                                   @Override
-                                                   public void onNothingSelected(AdapterView<?> parent) {
-                                                       spPostojeceKategorije.setSelection(0);
-                                                   }
-                                               });
-                                           }
-                                       }
-            );
-
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                    spinnerKategorije.setSelection(0);
+                }
+            });
         }
     }
 
     private void initialize() {
-        adapter = new CustomAdapter(context, prikazaniKvizovi);
-        lvKvizovi.setAdapter(adapter);
-        lvKvizovi.addFooterView(lvFooterView = adapter.getFooterView(lvKvizovi, "Dodaj kviz"));
+        listViewAdapter = new CustomAdapter(context, kvizovi);
+        listViewKvizovi.setAdapter(listViewAdapter);
+        listViewKvizovi.addFooterView(listViewFooter = listViewAdapter.getFooterView(listViewKvizovi, "Dodaj kviz"));
     }
 
     public void aktivnostDodajKviz() {
         Intent intent = new Intent(context, DodajKvizAkt.class);
         intent.putParcelableArrayListExtra("kategorije", kategorije);
-        intent.putParcelableArrayListExtra("kvizovi", sviKvizovi);
+        intent.putParcelableArrayListExtra("kvizovi", kvizovi);
         intent.putExtra("requestCode", DODAJ_KVIZ);
         intent.putExtra("token", TOKEN);
         startActivityForResult(intent, DODAJ_KVIZ);
@@ -206,7 +233,7 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
     public void aktivnostUrediKviz(Kviz kviz) {
         Intent intent = new Intent(context, DodajKvizAkt.class);
         intent.putParcelableArrayListExtra("kategorije", kategorije);
-        intent.putParcelableArrayListExtra("kvizovi", sviKvizovi);
+        intent.putParcelableArrayListExtra("kvizovi", kvizovi);
         intent.putExtra("kviz", kviz);
         intent.putExtra("requestCode", PROMIJENI_KVIZ);
         intent.putExtra("token", TOKEN);
@@ -225,14 +252,14 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
             if (resultCode == RESULT_OK) {
                 ArrayList<Kviz> novi = data.getParcelableArrayListExtra("kvizovi");
 
-                azurirajKvizove(novi);
-                adapter.notifyDataSetChanged();
-                sAdapter.notifyDataSetChanged();
+                //azurirajKvizove(novi);
+                listViewAdapter.notifyDataSetChanged();
+                spinnerAdapter.notifyDataSetChanged();
 
                 if (dpwidth < 550)
-                    spPostojeceKategorije.setSelection(spPostojeceKategorije.getSelectedItemPosition());
+                    spinnerKategorije.setSelection(spinnerKategorije.getSelectedItemPosition());
                 else
-                    detailFrag.azurirajKvizove(sviKvizovi);
+                    detailFrag.azurirajKvizove(kvizovi);
             }
 
             azurirajKategorije(data);
@@ -240,23 +267,23 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
     }
 
     private int dajIndexKviza(String staroImeKviza) {
-        for (int i = 0; i < sviKvizovi.size(); i++)
-            if (sviKvizovi.get(i).getNaziv().equals(staroImeKviza))
+        for (int i = 0; i < kvizovi.size(); i++)
+            if (kvizovi.get(i).getNaziv().equals(staroImeKviza))
                 return i;
 
-        return sviKvizovi.size() - 1;
+        return kvizovi.size() - 1;
     }
 
-    public void azurirajKvizove(ArrayList<Kviz> noviKvizovi) {
-        sviKvizovi.clear();
+    /*public void azurirajKvizove(ArrayList<Kviz> noviKvizovi) {
+        kvizovi.clear();
         prikazaniKvizovi.clear();
         for (Kviz k : noviKvizovi) {
-            sviKvizovi.add(k);
+            kvizovi.add(k);
             prikazaniKvizovi.add(k);
         }
-        if (adapter != null)
-            adapter.notifyDataSetChanged();
-    }
+        if (listViewAdapter != null)
+            listViewAdapter.notifyDataSetChanged();
+    }*/
 
     public void azurirajKategorije(@NonNull Intent data) {
         kategorije.clear();
@@ -264,7 +291,7 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
         kategorije.remove(kategorije.size() - 1);
 
         if (dpwidth < 550)
-            sAdapter.notifyDataSetChanged();
+            spinnerAdapter.notifyDataSetChanged();
         else
             listaFrag.azurirajKategorije(kategorije);
 
@@ -278,11 +305,38 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
     // U slucaju privremenog destroy-a, recimo rotacija ekrana
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        outState.putParcelableArrayList("kvizovi", sviKvizovi);
+        outState.putParcelableArrayList("kvizovi", kvizovi);
         outState.putParcelableArrayList("kategorije", kategorije);
-
+        outState.putString("token", TOKEN);
         // call superclass to save any view hierarchy
         super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onReceiveResult(int resultCode, Bundle resultData) {
+        if (resultCode == RESULT_OK) {
+            kategorije.clear();
+            kvizovi.clear();
+
+            ArrayList<Kategorija> noveKategorije = resultData.getParcelableArrayList("kategorije");
+            ArrayList<Kviz> noviKvizovi = resultData.getParcelableArrayList("kvizovi");
+
+            if (noveKategorije != null)
+                kategorije.addAll(noveKategorije);
+            if (noviKvizovi != null)
+                kvizovi.addAll(noviKvizovi);
+
+            findViewById(R.id.loadingPanel).setVisibility(View.INVISIBLE);
+
+            if (dpwidth < 550){
+                spinnerAdapter.notifyDataSetChanged();
+                listViewAdapter.notifyDataSetChanged();
+            }
+            else {
+                listaFrag.azurirajKategorije(kategorije);
+                detailFrag.azurirajKvizove(kvizovi);
+            }
+        }
     }
 
     private static class getAccessToken extends AsyncTask<String, Void, Void> {
@@ -320,8 +374,6 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            KvizoviAkt kvizoviAkt = (KvizoviAkt) activityWeakReference.get();
-            new HttpGetRequest(kvizoviAkt).execute("ALL", kvizoviAkt.TOKEN);
         }
     }
 
@@ -340,7 +392,7 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
                     haveConnectedMobile = true;
         }
 
-        if(!haveConnectedWifi && !haveConnectedMobile)
+        if (!haveConnectedWifi && !haveConnectedMobile)
             showDialog(context);
     }
 
@@ -355,7 +407,7 @@ public class KvizoviAkt extends AppCompatActivity implements IActivity {
                 })
                 .setPositiveButton("Quit", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        ((KvizoviAkt)context).finishAndRemoveTask();
+                        ((KvizoviAkt) context).finishAndRemoveTask();
                         System.exit(0);
                     }
                 });

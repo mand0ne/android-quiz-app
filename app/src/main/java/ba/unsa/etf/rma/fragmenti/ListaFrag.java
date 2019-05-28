@@ -60,13 +60,14 @@ public class ListaFrag extends Fragment {
 
         model = ViewModelProviders.of(getActivity()).get(KvizoviViewModel.class);
 
-
         listaKategorija.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 model.setKategorija((Kategorija) parent.getItemAtPosition(position));
             }
         });
+
+        model.setKategorija((Kategorija) listaKategorija.getItemAtPosition(0));
     }
 
     public void azurirajKategorije(ArrayList<Kategorija> noveKategorije) {

@@ -37,6 +37,7 @@ public class HttpGetRequest extends AsyncTask<String, Void, String> {
     private URL url;
     private HttpURLConnection connection;
     private String request;
+
     private ArrayList<Kategorija> kategorije = new ArrayList<>();
     private ArrayList<Kviz> kvizovi = new ArrayList<>();
     private ArrayList<Pitanje> pitanja = new ArrayList<>();
@@ -49,7 +50,7 @@ public class HttpGetRequest extends AsyncTask<String, Void, String> {
     protected void onPreExecute() {
         super.onPreExecute();
 
-        if (activityWeakReference.get() == null ||activityWeakReference.get().isFinishing())
+        if (activityWeakReference.get() == null || activityWeakReference.get().isFinishing())
             this.cancel(true);
     }
 
@@ -185,7 +186,7 @@ public class HttpGetRequest extends AsyncTask<String, Void, String> {
                 KvizoviAkt kvizoviAkt = (KvizoviAkt) activityWeakReference.get();
                 kvizoviAkt.findViewById(R.id.loadingPanel).setVisibility(View.INVISIBLE);
                 kvizoviAkt.setKategorije(kategorije);
-                kvizoviAkt.azurirajKvizove(kvizovi);
+                //kvizoviAkt.azurirajKvizove(kvizovi);
                 kvizoviAkt.start();
                 break;
             case "QUESTIONS":

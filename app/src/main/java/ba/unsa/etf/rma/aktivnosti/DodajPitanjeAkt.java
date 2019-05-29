@@ -1,8 +1,11 @@
 package ba.unsa.etf.rma.aktivnosti;
 
+import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -22,19 +25,26 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 import ba.unsa.etf.rma.R;
+import ba.unsa.etf.rma.klase.FirebaseIntentService;
+import ba.unsa.etf.rma.klase.FirebaseResultReceiver;
 import ba.unsa.etf.rma.klase.HttpGetRequest;
 import ba.unsa.etf.rma.klase.Pitanje;
 
-public class DodajPitanjeAkt extends AppCompatActivity {
+import static ba.unsa.etf.rma.klase.FirebaseIntentService.VALIDNO_PITANJE;
+
+public class DodajPitanjeAkt extends AppCompatActivity implements FirebaseResultReceiver.Receiver {
 
     private EditText etNaziv;
     private EditText etOdgovor;
     private Button btnDodajTacan;
+
     private ArrayAdapter<String> adapter;
+
     private ArrayList<String> odgovori = new ArrayList<>();
     private Pitanje novoPitanje = null;
-    private ArrayList<Pitanje> svaPitanja = new ArrayList<>();
-    private String TOKEN;
+
+    private String TOKEN = "";
+    public FirebaseResultReceiver receiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,16 +53,18 @@ public class DodajPitanjeAkt extends AppCompatActivity {
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 
+        receiver = new FirebaseResultReceiver(new Handler());
+        receiver.setReceiver(this);
+
         etNaziv = findViewById(R.id.etNaziv);
         etOdgovor = findViewById(R.id.etOdgovor);
+        btnDodajTacan = findViewById(R.id.btnDodajTacan);
+
         ListView lvOdgovori = findViewById(R.id.lvOdgovori);
         Button btnDodajOdgovor = findViewById(R.id.btnDodajOdgovor);
-        btnDodajTacan = findViewById(R.id.btnDodajTacan);
         Button btnDodajPitanje = findViewById(R.id.btnDodajPitanje);
 
         Intent intent = getIntent();
-        svaPitanja.addAll(intent.<Pitanje>getParcelableArrayListExtra("dodana"));
-        svaPitanja.addAll(intent.<Pitanje>getParcelableArrayListExtra("moguca"));
         TOKEN = intent.getStringExtra("token");
 
         adapter = (new ArrayAdapter<String>(this, R.layout.element_odgovora, R.id.odgovor, odgovori) {
@@ -69,23 +81,23 @@ public class DodajPitanjeAkt extends AppCompatActivity {
                 return row;
             }
         });
-
         lvOdgovori.setAdapter(adapter);
 
-        novoPitanje = new Pitanje(etNaziv.getText().toString(), etNaziv.getText().toString(), null);
+        novoPitanje = new Pitanje(null, null, null);
 
         btnDodajOdgovor.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (validanOdgovor()) {
+                if (etOdgovor.getText().length() != 0) {
                     String odgovor = etOdgovor.getText().toString();
                     if (novoPitanje.nePostojiOdgovor(odgovor)) {
+                        novoPitanje.dodajOdgovor(odgovor);
+
                         odgovori.add(odgovor);
                         adapter.notifyDataSetChanged();
-                        novoPitanje.dodajOdgovor(odgovor);
                         etOdgovor.setText("");
                     } else
-                        Toast.makeText(DodajPitanjeAkt.this, "Odgovor već postoji!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(DodajPitanjeAkt.this, "Odgovor već postoji!", Toast.LENGTH_LONG).show();
                 } else
                     etOdgovor.setError("Unesite odgovor!");
             }
@@ -94,11 +106,12 @@ public class DodajPitanjeAkt extends AppCompatActivity {
         btnDodajTacan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (validanOdgovor()) {
+                if (etOdgovor.getText().length() != 0) {
                     String odgovor = etOdgovor.getText().toString();
                     if (novoPitanje.nePostojiOdgovor(odgovor)) {
                         novoPitanje.dodajOdgovor(odgovor);
                         novoPitanje.setTacan(odgovor);
+
                         btnDodajTacan.setEnabled(false);
                         btnDodajTacan.getBackground().setColorFilter(0xFFB79D9D, PorterDuff.Mode.MULTIPLY);
 
@@ -106,7 +119,7 @@ public class DodajPitanjeAkt extends AppCompatActivity {
                         adapter.notifyDataSetChanged();
                         etOdgovor.setText("");
                     } else
-                        Toast.makeText(DodajPitanjeAkt.this, "Odgovor već postoji!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(DodajPitanjeAkt.this, "Odgovor već postoji!", Toast.LENGTH_LONG).show();
                 } else
                     etOdgovor.setError("Unesite odgovor!");
             }
@@ -131,19 +144,9 @@ public class DodajPitanjeAkt extends AppCompatActivity {
         btnDodajPitanje.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (validnoPitanje()) {
-                    if (!postojiPitanje()) {
-                        Intent i = new Intent();
-                        novoPitanje.setNaziv(etNaziv.getText().toString());
-                        novoPitanje.setTekstPitanja(etNaziv.getText().toString());
-
-                        i.putExtra("novoPitanje", novoPitanje);
-                        i.putParcelableArrayListExtra("svaPitanja", svaPitanja);
-                        setResult(RESULT_OK, i);
-                        finish();
-                    } else
-                        Toast.makeText(DodajPitanjeAkt.this, "Pitanje sa istim imenom već postoji!", Toast.LENGTH_SHORT).show();
-                } else {
+                if (validnoPitanje())
+                    firestoreRequest(VALIDNO_PITANJE);
+                else {
                     if (novoPitanje.getTacan() == null)
                         etOdgovor.setError("Potrebno je unijeti tačan odgovor!");
                     if (etNaziv.getText().length() == 0)
@@ -153,42 +156,45 @@ public class DodajPitanjeAkt extends AppCompatActivity {
         });
     }
 
-    @Override
-    public void onBackPressed() {
-        Intent i = new Intent();
-        i.putParcelableArrayListExtra("svaPitanja", svaPitanja);
-        setResult(RESULT_CANCELED, i);
+    private void dodajPitanje(String nazivPitanja) {
+        Intent intent = new Intent();
+        novoPitanje.setNaziv(nazivPitanja);
+        novoPitanje.setTekstPitanja(etNaziv.getText().toString());
+        intent.putExtra("novoPitanje", novoPitanje);
+        setResult(RESULT_OK, intent);
         finish();
     }
 
-    boolean validanOdgovor() {
-        return etOdgovor != null && !etOdgovor.getText().toString().isEmpty() && etOdgovor.getText() != null && etOdgovor.getText().length() != 0;
-    }
-
-    boolean postojiPitanje() {
+    private void firestoreRequest(int request) {
         String naziv = etNaziv.getText().toString();
-
-        try {
-            new HttpGetRequest(DodajPitanjeAkt.this).execute("QUESTION-VALID", TOKEN).get();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        for (Pitanje p : svaPitanja)
-            if (p.getNaziv().equals(naziv))
-                return true;
-
-        return false;
+        final Intent intent = new Intent(Intent.ACTION_SYNC, null, DodajPitanjeAkt.this, FirebaseIntentService.class);
+        intent.putExtra("receiver", receiver);
+        intent.putExtra("token", TOKEN);
+        intent.putExtra("request", request);
+        intent.putExtra("nazivPitanja", naziv);
+        startService(intent);
     }
 
     boolean validnoPitanje() {
-        return etNaziv.getText().length() != 0
-                && novoPitanje.getTacan() != null;
+        return etNaziv.getText().length() != 0 && novoPitanje.getTacan() != null;
     }
 
-    public void azurirajPitanja(ArrayList<Pitanje> pitanja){
-        svaPitanja = pitanja;
+    @Override
+    public void onReceiveResult(int resultCode, Bundle resultData) {
+        if (resultCode == FirebaseIntentService.VALIDNO_PITANJE) {
+            if (resultData.getBoolean("postojiPitanje"))
+                throwAlert(resultData.getString("nazivPitanja"));
+            else {
+                dodajPitanje(resultData.getString("nazivPitanja"));
+            }
+        }
+    }
+
+    private void throwAlert(String naziv) {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        alertDialog.setNeutralButton("U redu", null);
+        alertDialog.setMessage("Pitanje sa nazivom: \"" + naziv + "\" već postoji!");
+        alertDialog.create();
+        alertDialog.show();
     }
 }

@@ -74,10 +74,10 @@ public class HttpGetRequest extends AsyncTask<String, Void, String> {
                     ((IActivity)activityWeakReference.get()).azurirajKvizove(quizFilter(strings[2]));
                     break;
                 case "CATEGORY-VALID":
-                    ((DodajKategorijuAkt)activityWeakReference.get()).azurirajKategorije(importCategories());
+                    //((DodajKategorijuAkt)activityWeakReference.get()).azurirajKategorije(importCategories());
                     break;
                 case "QUESTION-VALID":
-                    ((DodajPitanjeAkt)activityWeakReference.get()).azurirajPitanja(importQuestions());
+                   // ((DodajPitanjeAkt)activityWeakReference.get()).azurirajPitanja(importQuestions());
                     break;
                 default:
                     break;

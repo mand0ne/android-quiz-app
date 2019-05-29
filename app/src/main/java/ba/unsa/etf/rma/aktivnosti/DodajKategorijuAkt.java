@@ -1,6 +1,8 @@
 package ba.unsa.etf.rma.aktivnosti;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -15,32 +17,41 @@ import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
 import ba.unsa.etf.rma.R;
+import ba.unsa.etf.rma.klase.FirebaseIntentService;
+import ba.unsa.etf.rma.klase.FirebaseResultReceiver;
 import ba.unsa.etf.rma.klase.HttpGetRequest;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.Kviz;
 
-public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.Callback {
+import static ba.unsa.etf.rma.klase.FirebaseIntentService.VALIDNA_KATEGORIJA;
+
+public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.Callback, FirebaseResultReceiver.Receiver {
 
     private EditText etNaziv;
     private EditText etIkona;
+
     private Icon[] selectedIcons;
-    private ArrayList<Kategorija> postojeceKategorije;
-    private String TOKEN;
+
+    private String TOKEN = "";
+    public FirebaseResultReceiver receiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dodaj_kategoriju_akt);
 
-        Button btnDodajKategoriju = findViewById(R.id.btnDodajKategoriju);
-        Button btnDodajIkonu = findViewById(R.id.btnDodajIkonu);
+        receiver = new FirebaseResultReceiver(new Handler());
+        receiver.setReceiver(this);
+
         etNaziv = findViewById(R.id.etNaziv);
         etIkona = findViewById(R.id.etIkona);
         etIkona.setEnabled(false);
 
+        Button btnDodajKategoriju = findViewById(R.id.btnDodajKategoriju);
+        Button btnDodajIkonu = findViewById(R.id.btnDodajIkonu);
+
         Intent intent = getIntent();
         final IconDialog iconDialog = new IconDialog();
-        postojeceKategorije = intent.getParcelableArrayListExtra("kategorije");
         TOKEN = intent.getStringExtra("token");
 
         btnDodajIkonu.setOnClickListener(new View.OnClickListener() {
@@ -54,18 +65,9 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         btnDodajKategoriju.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (validanUnos()) {
-                    if (!postojiKategorija()) {
-                        Kategorija novaKategorija = new Kategorija(etNaziv.getText().toString(), etIkona.getText().toString());
-                        Intent i = new Intent();
-
-                        postojeceKategorije.add(novaKategorija);
-                        i.putParcelableArrayListExtra("kategorije", postojeceKategorije);
-                        setResult(RESULT_OK, i);
-                        finish();
-                    } else
-                        Toast.makeText(DodajKategorijuAkt.this, "Kategorija sa istim imenom već postoji!", Toast.LENGTH_SHORT).show();
-                } else {
+                if (validanUnos())
+                    firestoreRequest(VALIDNA_KATEGORIJA);
+                else {
                     if (etNaziv.getText().toString().length() == 0)
                         etNaziv.setError("Unesite naziv kategorije!");
 
@@ -74,38 +76,11 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
                 }
             }
         });
-
     }
 
-    @Override
-    public void onBackPressed() {
-        Intent i = new Intent();
-        i.putParcelableArrayListExtra("kategorije", postojeceKategorije);
-        setResult(RESULT_CANCELED, i);
-        finish();
-    }
-
-    private boolean postojiKategorija() {
-        String naziv = etNaziv.getText().toString();
-
-        try {
-            new HttpGetRequest(DodajKategorijuAkt.this).execute("CATEGORY-VALID", TOKEN).get();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        for (Kategorija ka : postojeceKategorije)
-            if (ka.getNaziv().equals(naziv))
-                return true;
-
-        return false;
-    }
 
     private boolean validanUnos() {
-        return etIkona.getText().toString().length() != 0
-                && etNaziv.getText().toString().length() != 0;
+        return etIkona.getText().length() != 0 && etNaziv.getText().length() != 0;
     }
 
     @Override
@@ -114,7 +89,44 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         etIkona.setText(String.valueOf(selectedIcons[0].getId()));
     }
 
-    public void azurirajKategorije(ArrayList<Kategorija> kategorije) {
-        postojeceKategorije = kategorije;
+
+    private void dodajKategoriju(String nazivKategorije, ArrayList<Kategorija> noveKategorije) {
+        Intent intent = new Intent();
+        if(nazivKategorije != null)
+            noveKategorije.add(new Kategorija(nazivKategorije, etIkona.getText().toString()));
+
+        intent.putExtra("noveKategorije", noveKategorije);
+        setResult(RESULT_OK, intent);
+        finish();
+    }
+
+    private void firestoreRequest(int request) {
+        String naziv = etNaziv.getText().toString();
+        final Intent intent = new Intent(Intent.ACTION_SYNC, null, DodajKategorijuAkt.this, FirebaseIntentService.class);
+        intent.putExtra("receiver", receiver);
+        intent.putExtra("token", TOKEN);
+        intent.putExtra("request", request);
+        intent.putExtra("nazivKategorije", naziv);
+        startService(intent);
+    }
+
+    @Override
+    public void onReceiveResult(int resultCode, Bundle resultData) {
+        if (resultCode == VALIDNA_KATEGORIJA) {
+            if (resultData.getBoolean("postojiKategorija"))
+                throwAlert(resultData.getString("nazivKategorije"));
+            else {
+                dodajKategoriju(resultData.getString("nazivKategorije"),
+                        resultData.<Kategorija>getParcelableArrayList("noveKategorije"));
+            }
+        }
+    }
+
+    private void throwAlert(String naziv) {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        alertDialog.setNeutralButton("U redu", null);
+        alertDialog.setMessage("Kategorija sa nazivom: \"" + naziv + "\" već postoji!");
+        alertDialog.create();
+        alertDialog.show();
     }
 }

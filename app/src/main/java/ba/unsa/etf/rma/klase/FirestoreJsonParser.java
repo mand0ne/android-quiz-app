@@ -1,133 +1,159 @@
 package ba.unsa.etf.rma.klase;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
-import java.util.List;
 
 class FirestoreJsonParser {
+
+    private boolean filter;
+
+    public FirestoreJsonParser(){
+        filter = false;
+    }
+
+    public FirestoreJsonParser(boolean b){
+        filter = b;
+    }
 
     ArrayList<Kategorija> parsirajKategorije(String kategorijeFirebase) {
         ArrayList<Kategorija> listaKategorija = new ArrayList<>();
 
-        String[] kategorijeJson = kategorijeFirebase.split("\\{\n\"name\": ");
+        try {
+            JSONObject dokumentObjekat = new JSONObject(kategorijeFirebase);
+            JSONArray dokumenti = dokumentObjekat.getJSONArray("documents");
 
-        for (int i = 1; i < kategorijeJson.length; i++) {
-            Kategorija novaKategorija = parsirajDokumentKategorije(kategorijeJson[i].split("\n"));
-            if (novaKategorija != null)
-                listaKategorija.add(novaKategorija);
+            for (int i = 0; i < dokumenti.length(); i++) {
+                try{
+                    Kategorija novaKategorija = parsirajDokumentKategorije(dokumenti.getJSONObject(i));
+                    if (novaKategorija != null)
+                        listaKategorija.add(novaKategorija);
+                }catch(Exception e){}
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
 
         return listaKategorija;
     }
 
-    Kategorija parsirajDokumentKategorije(String[] kategorija) {
-        String firebaseId = kategorija[0].substring(kategorija[0].indexOf("/CAT") + 1, kategorija[0].length() - 2);
+    Kategorija parsirajDokumentKategorije(JSONObject kategorija) throws JSONException {
+        String name = kategorija.getString("name");
+        int index = name.indexOf("Kategorije");
+        String firebaseId = name.substring(index + 11);
         String naziv = null, idIkonice = null;
-        try {
 
-            for (int j = 1; j<kategorija.length; j++) {
-                if (kategorija[j].contains("\"naziv\": "))
-                    naziv = kategorija[j + 1].substring(16, kategorija[j + 1].length() - 1);
+        JSONObject fields = kategorija.getJSONObject("fields");
+        JSONObject nazivKategorije = fields.getJSONObject("naziv");
+        naziv = nazivKategorije.getString("stringValue");
 
-                if (kategorija[j].contains("\"idIkonice\": "))
-                    idIkonice = kategorija[j + 1].substring(17, kategorija[j + 1].length() - 1);
-            }
+        JSONObject jsonId = fields.getJSONObject("idIkonice");
+        idIkonice = jsonId.getString("integerValue");
 
-            if(naziv == null || idIkonice == null)
-                return null;
-
-        } catch (Exception e) {
+        if(naziv == null || idIkonice == null)
             return null;
-        }
 
         return new Kategorija(naziv, idIkonice, firebaseId);
     }
 
-    ArrayList<Pitanje> parsirajPitanja(String pitanjaFirebase){
+    ArrayList<Pitanje> parsirajPitanja(String pitanjaFirebase) {
         ArrayList<Pitanje> listaPitanja = new ArrayList<>();
 
-        String[] pitanjaJson = pitanjaFirebase.split("\\{\n\"name\": ");
+        try {
+            JSONObject dokumentObjekat = new JSONObject(pitanjaFirebase);
+            JSONArray dokumenti = dokumentObjekat.getJSONArray("documents");
 
-        for (int i = 1; i < pitanjaJson.length; i++) {
-            Pitanje novoPitanje = parsirajDokumentPitanje(pitanjaJson[i].split("\n"));
-            if (novoPitanje != null)
-                listaPitanja.add(novoPitanje);
+            for (int i = 0; i < dokumenti.length(); i++) {
+                Pitanje novoPitanje = parsirajDokumentPitanje(dokumenti.getJSONObject(i));
+                if (novoPitanje != null)
+                    listaPitanja.add(novoPitanje);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
 
         return listaPitanja;
     }
 
-    Pitanje parsirajDokumentPitanje(String[] pitanje) {
-        String firebaseId = pitanje[0].substring(pitanje[0].indexOf("/QUES") + 1, pitanje[0].length() - 2);
+    Pitanje parsirajDokumentPitanje(JSONObject pitanje) throws JSONException {
+        String name = pitanje.getString("name");
+        int index = name.indexOf("Pitanja");
+        String firebaseId = name.substring(index + 8);
         String naziv = null;
         Integer indexTacnog = null;
         ArrayList<String> odgovori = new ArrayList<>();
 
-        try {
 
-            for (int j = 1; j < pitanje.length; j++) {
+        JSONObject fields = pitanje.getJSONObject("fields");
+        JSONObject nazivPitanja = fields.getJSONObject("naziv");
+        naziv = nazivPitanja.getString("stringValue");
 
-                if (pitanje[j].contains("\"naziv\": "))
-                    naziv = pitanje[j + 1].substring(16, pitanje[j + 1].length() - 1);
+        JSONObject jsonIndex = fields.getJSONObject("indexTacnog");
+        indexTacnog = jsonIndex.getInt("integerValue");
 
-                if (pitanje[j].contains("\"indexTacnog\": "))
-                    indexTacnog = Integer.parseInt(pitanje[j + 1].substring(17, pitanje[j + 1].length() - 1));
+        JSONObject jsonOdgovori = fields.getJSONObject("odgovori");
+        JSONObject jsonOdgovori2 = jsonOdgovori.getJSONObject("arrayValue");
+        JSONArray jsonOdgovoriArray = jsonOdgovori2.getJSONArray("values");
 
-                if (pitanje[j].contains("\"arrayValue\": ")) {
-                    if (pitanje[j+1].contains("values")) {
-                        while (!pitanje[j].equals("]")) {
-                            if (pitanje[j].contains("\"stringValue\": "))
-                                odgovori.add(pitanje[j].substring(16, pitanje[j].length()-1));
-                            j++;
-                        }
-                    }
-                }
-            }
+        for(int i = 0; i < jsonOdgovoriArray.length(); i++)
+            odgovori.add(jsonOdgovoriArray.getJSONObject(i).getString("stringValue"));
 
-            if(naziv == null || indexTacnog == null || odgovori.isEmpty())
-                return null;
-
-        } catch (Exception e) {
+        if (naziv == null || indexTacnog == null || odgovori.isEmpty())
             return null;
-        }
 
         return new Pitanje(naziv, naziv, odgovori, odgovori.get(indexTacnog), firebaseId);
     }
 
-    ArrayList<Kviz> parsirajKvizove(String kvizoviFirebase, ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja){
+    ArrayList<Kviz> parsirajKvizove(String kvizoviFirebase, ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja) {
         ArrayList<Kviz> listaKvizova = new ArrayList<>();
 
-        String[] kvizoviJson = kvizoviFirebase.split("\\{\n\"name\": ");
+        try {
+            JSONObject dokumentObjekat = new JSONObject(kvizoviFirebase);
+            JSONArray dokumenti = dokumentObjekat.getJSONArray("documents");
 
-        for (int i = 1; i < kvizoviJson.length; i++) {
-            Kviz noviKviz = parsirajDokumentKviz(kvizoviJson[i].split("\n"), kategorije, pitanja);
-            if (noviKviz != null)
-                listaKvizova.add(noviKviz);
+            for (int i = 0; i < dokumenti.length(); i++) {
+                JSONObject jsonObjectKviz = dokumenti.getJSONObject(i);
+                if(filter)
+                    jsonObjectKviz = jsonObjectKviz.getJSONObject("document");
+
+                Kviz noviKviz = parsirajDokumentKviz(jsonObjectKviz, kategorije, pitanja);
+                if (noviKviz != null)
+                    listaKvizova.add(noviKviz);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
 
         return listaKvizova;
     }
 
-    Kviz parsirajDokumentKviz(String[] kviz, ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja){
-        String firebaseId = kviz[0].substring(kviz[0].indexOf("/Kvizovi/") + 9, kviz[0].length() - 2);
+    Kviz parsirajDokumentKviz(JSONObject kviz, ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja) throws JSONException {
+
+        String name = kviz.getString("name");
+        int index = name.indexOf("Kvizovi");
+        String firebaseId = name.substring(index + 8);
         String naziv = null, idKategorije = null;
         ArrayList<String> idPitanja = new ArrayList<>();
 
-        for (int j = 1; j < kviz.length; j++) {
-            if (kviz[j].contains("\"naziv\": "))
-                naziv = kviz[j + 1].substring(16, kviz[j + 1].length() - 1);
+        JSONObject fields = kviz.getJSONObject("fields");
+        JSONObject nazivKategorije = fields.getJSONObject("naziv");
+        naziv = nazivKategorije.getString("stringValue");
 
-            if (kviz[j].contains("\"idKategorije\": "))
-                idKategorije = kviz[j + 1].substring(16, kviz[j + 1].length() - 1);
+        JSONObject jsonId = fields.getJSONObject("idKategorije");
+        idKategorije = jsonId.getString("stringValue");
 
-            if (kviz[j].contains("\"arrayValue\": ")) {
-                if (kviz[j + 1].contains("values")) {
-                    while (!kviz[j].equals("]")) {
-                        if (kviz[j].contains("\"stringValue\": "))
-                            idPitanja.add(kviz[j].substring(16, kviz[j].length()-1));
-                        j++;
-                    }
-                }
-            }
+
+        try {
+            JSONObject jsonPitanja = fields.getJSONObject("pitanja");
+            JSONObject jsonPitanjaArrayValue= jsonPitanja.getJSONObject("arrayValue");
+            JSONArray jsonPitanjaArray = jsonPitanjaArrayValue.getJSONArray("values");
+
+            for(int i = 0; i < jsonPitanjaArray.length(); i++)
+                idPitanja.add(jsonPitanjaArray.getJSONObject(i).getString("stringValue"));
+        }catch (Exception e){
+
         }
 
         Kategorija kategorijaKviza = null;
@@ -149,47 +175,4 @@ class FirestoreJsonParser {
 
         return new Kviz(naziv, pitanjaKviza, kategorijaKviza, firebaseId);
     }
-
-
-/*
-     RangListaKviz parsirajKvizRangListe(String result) {
-        if (result.equals("{}"))
-            return null;
-
-        String[] rangListaJson = result.split("\\{\n\"name\": ");
-
-        for (int i = 1; i < rangListaCollection.length; i++) {
-
-            String rangListaDocument = rangListaCollection[i];
-
-            String[] rows = rangListaDocument.split("\n");
-
-            String id = rows[0].substring(rows[0].length() - 38, rows[0].length() - 2);
-            String nazivKviza = "";
-            String imeIgraca = "";
-            int pozicija = 0;
-            double procenat = 0;
-
-            for (int j = 1; j < rows.length; j++) {
-                if (rows[j].contains("\"nazivKviza\": "))
-                    nazivKviza = rows[j + 1].substring(16, rows[j + 1].length() - 1);
-
-                if (rows[j].contains("\"imeIgraca\": "))
-                    imeIgraca = rows[j + 1].substring(16, rows[j + 1].length() - 1);
-
-                if (rows[j].contains("\"pozicija\": "))
-                    pozicija = Integer.parseInt(rows[j + 1].substring(17, rows[j + 1].length() - 1));
-
-                if (rows[j].contains("\"procenatTacnih\": "))
-                    procenat = Double.parseDouble(rows[j + 1].substring(15));
-            }
-
-            KvizRangLista rangLista = new RangListaItem(imeIgraca, nazivKviza, procenat, pozicija);
-            rangLista.setIdDokumenta(id);
-            rangListaArray.add(rangLista);
-        }
-
-    }
-
-*/
 }

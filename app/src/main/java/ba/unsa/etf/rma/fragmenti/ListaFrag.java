@@ -18,8 +18,6 @@ import ba.unsa.etf.rma.klase.CustomAdapter;
 import ba.unsa.etf.rma.klase.Kategorija;
 import ba.unsa.etf.rma.klase.KvizoviViewModel;
 
-
-
 public class ListaFrag extends Fragment {
 
     private KvizoviViewModel model;
@@ -28,7 +26,6 @@ public class ListaFrag extends Fragment {
     private CustomAdapter kategorijaAdapter = null;
 
     private ArrayList<Kategorija> kategorije = new ArrayList<>();
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -48,7 +45,7 @@ public class ListaFrag extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        listaKategorija = getView().findViewById(R.id.listaKategorija);
+        listaKategorija = view.findViewById(R.id.listaKategorija);
     }
 
     @Override

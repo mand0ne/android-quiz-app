@@ -13,7 +13,6 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -43,13 +42,10 @@ public class DetailFrag extends Fragment {
 
         trenutnaKategorija = null;
         kvizoviFragment = new ArrayList<>(Objects.requireNonNull(getArguments().<Kviz>getParcelableArrayList("kvizovi")));
-        kvizoviFragment.add(new Kviz("Dodaj kviz", new Kategorija("-100", "-100"), null));
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_detail, container, false);
     }
 
@@ -74,7 +70,6 @@ public class DetailFrag extends Fragment {
                 if (kategorija != null) {
                     trenutnaKategorija = kategorija;
                     filtrirajKvizove();
-                    kvizAdapter.notifyDataSetChanged();
                 }
             }
         });
@@ -84,9 +79,9 @@ public class DetailFrag extends Fragment {
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
                 if (kliknutiKviz.getNaziv().equals("Dodaj kviz"))
-                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).aktivnostDodajKviz();
+                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).dodajKvizAktivnost(kliknutiKviz);
                 else
-                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).aktivnostUrediKviz(kliknutiKviz);
+                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).dodajKvizAktivnost(kliknutiKviz);
 
                 return true;
             }
@@ -99,7 +94,7 @@ public class DetailFrag extends Fragment {
                 if (!(kliknutiKviz.getNaziv().equals("Dodaj kviz")))
                     ((KvizoviAkt) Objects.requireNonNull(getActivity())).aktivnostIgrajKviz(kliknutiKviz);
                 else
-                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).aktivnostDodajKviz();
+                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).dodajKvizAktivnost(kliknutiKviz);
             }
         });
     }
@@ -107,8 +102,8 @@ public class DetailFrag extends Fragment {
     private void filtrirajKvizove() {
         final Intent intent = new Intent(Intent.ACTION_SYNC, null, getActivity(), FirebaseIntentService.class);
         intent.putExtra("receiver", ((KvizoviAkt) Objects.requireNonNull(getActivity())).receiver);
-        intent.putExtra("token", ((KvizoviAkt)getActivity()).getTOKEN());
-        intent.putExtra("action", FirebaseIntentService.FILTRIRAJ_KVIZOVE);
+        intent.putExtra("token", ((KvizoviAkt) getActivity()).getTOKEN());
+        intent.putExtra("request", FirebaseIntentService.FILTRIRAJ_KVIZOVE);
         intent.putExtra("kategorijaId", trenutnaKategorija.firebaseId());
         getActivity().startService(intent);
     }

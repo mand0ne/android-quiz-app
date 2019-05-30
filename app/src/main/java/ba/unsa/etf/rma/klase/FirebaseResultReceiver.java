@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.ResultReceiver;
 
 public class FirebaseResultReceiver extends ResultReceiver {
+
     public interface Receiver {
         void onReceiveResult(int resultCode, Bundle resultData);
     }

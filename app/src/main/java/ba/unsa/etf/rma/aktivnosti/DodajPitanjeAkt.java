@@ -1,7 +1,6 @@
 package ba.unsa.etf.rma.aktivnosti;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -22,12 +21,10 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.klase.FirebaseIntentService;
 import ba.unsa.etf.rma.klase.FirebaseResultReceiver;
-import ba.unsa.etf.rma.klase.HttpGetRequest;
 import ba.unsa.etf.rma.klase.Pitanje;
 
 import static ba.unsa.etf.rma.klase.FirebaseIntentService.VALIDNO_PITANJE;

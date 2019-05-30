@@ -16,6 +16,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import static android.app.Activity.RESULT_OK;
@@ -380,7 +381,7 @@ public class FirebaseIntentService extends IntentService {
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
         openConnection(true);
         try (OutputStream os = connection.getOutputStream()) {
-            byte[] input = structuredQuery.getBytes("utf-8");
+            byte[] input = structuredQuery.getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
         }
 

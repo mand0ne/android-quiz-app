@@ -69,6 +69,7 @@ public class ListaFrag extends Fragment {
 
     public void azurirajKategorije(ArrayList<Kategorija> noveKategorije) {
         kategorije.clear();
+        kategorije.add(new Kategorija("Svi", "-1"));
         kategorije.addAll(noveKategorije);
         kategorijaAdapter.notifyDataSetChanged();
     }

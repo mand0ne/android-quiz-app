@@ -208,8 +208,10 @@ public class KvizoviAkt extends AppCompatActivity implements FirebaseResultRecei
         spinnerKategorije.setAdapter(spinnerAdapter);
     }
 
+
     public void dodajKvizAktivnost(Kviz kviz) {
         Intent intent = new Intent(context, DodajKvizAkt.class);
+        kategorije.remove(0);
         intent.putParcelableArrayListExtra("kategorije", kategorije);
         intent.putParcelableArrayListExtra("kvizovi", kvizovi);
         intent.putExtra("token", TOKEN);
@@ -230,55 +232,64 @@ public class KvizoviAkt extends AppCompatActivity implements FirebaseResultRecei
         startActivity(intent);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (data != null) {
-            if (resultCode == RESULT_OK) {
-                ArrayList<Kviz> noviKvizovi = data.getParcelableArrayListExtra("kvizovi");
-
-                azurirajKvizove(noviKvizovi);
-
-                if (dpwidth < 550)
-                    spinnerKategorije.setSelection(spinnerKategorije.getSelectedItemPosition());
-                else
-                    detailFrag.azurirajKvizove(kvizovi);
-            }
-
-            azurirajKategorije(data);
-        }
-    }
-
-    private int dajIndexKviza(String staroImeKviza) {
-        for (int i = 0; i < kvizovi.size(); i++)
-            if (kvizovi.get(i).getNaziv().equals(staroImeKviza))
-                return i;
-
-        return kvizovi.size() - 1;
-    }
-
-    public void azurirajKvizove(ArrayList<Kviz> noviKvizovi) {
-        kvizovi.clear();
-        kvizovi.addAll(noviKvizovi);
-        if (listViewAdapter != null)
-            listViewAdapter.notifyDataSetChanged();
-    }
-
-    public void azurirajKategorije(@NonNull Intent data) {
+    public void azurirajKategorije(ArrayList<Kategorija> noveKategorije, boolean normalLayout) {
         kategorije.clear();
-        kategorije.addAll(data.<Kategorija>getParcelableArrayListExtra("kategorije"));
-        kategorije.remove(kategorije.size() - 1);
+        kategorije.add(new Kategorija("Svi", "-1"));
+        kategorije.addAll(noveKategorije);
 
-        if (dpwidth < 550)
+        if (normalLayout)
             spinnerAdapter.notifyDataSetChanged();
         else
             listaFrag.azurirajKategorije(kategorije);
-
     }
 
-    public void setKategorije(ArrayList<Kategorija> kategorije) {
-        this.kategorije.clear();
-        this.kategorije.addAll(kategorije);
+    public void azurirajKvizove(ArrayList<Kviz> noviKvizovi, boolean normalLayout) {
+        kvizovi.clear();
+        kvizovi.addAll(noviKvizovi);
+
+        if (normalLayout)
+            listViewAdapter.notifyDataSetChanged();
+        else
+            detailFrag.azurirajKvizove(kvizovi);
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.wtf("TAG KVIZOVIAKT:", "boggajebo" );
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        Log.wtf("onActivityResult: ", "plsradi" );
+        if (data != null) {
+            if (resultCode == RESULT_OK) {
+                ArrayList<Kategorija> noveKategorije = data.getParcelableArrayListExtra("kategorije");
+                ArrayList<Kviz> noviKvizovi = data.getParcelableArrayListExtra("kvizovi");
+
+                azurirajKategorije(noveKategorije, dpwidth < 550);
+                azurirajKvizove(noviKvizovi, dpwidth < 500);
+            }
+            else{
+                ArrayList<Kategorija> noveKategorije = data.getParcelableArrayListExtra("kategorije");
+                azurirajKategorije(noveKategorije, dpwidth < 550);
+            }
+        }
+    }
+
+    @Override
+    public void onReceiveResult(int resultCode, Bundle resultData) {
+        if (resultCode == RESULT_OK) {
+            ArrayList<Kategorija> noveKategorije = resultData.getParcelableArrayList("kategorije");
+            ArrayList<Kviz> noviKvizovi = resultData.getParcelableArrayList("kvizovi");
+
+            azurirajKategorije(noveKategorije, dpwidth < 550);
+            azurirajKvizove(noviKvizovi, dpwidth < 500);
+
+            findViewById(R.id.loadingPanel).setVisibility(View.INVISIBLE);
+        }
+    }
+
 
     // U slucaju privremenog destroy-a, recimo rotacija ekrana
     @Override
@@ -291,31 +302,8 @@ public class KvizoviAkt extends AppCompatActivity implements FirebaseResultRecei
         super.onSaveInstanceState(outState);
     }
 
-    @Override
-    public void onReceiveResult(int resultCode, Bundle resultData) {
-        if (resultCode == RESULT_OK) {
-            kategorije.clear();
-            kvizovi.clear();
 
-            ArrayList<Kategorija> noveKategorije = resultData.getParcelableArrayList("kategorije");
-            ArrayList<Kviz> noviKvizovi = resultData.getParcelableArrayList("kvizovi");
 
-            if (noveKategorije != null)
-                kategorije.addAll(noveKategorije);
-            if (noviKvizovi != null)
-                kvizovi.addAll(noviKvizovi);
-
-            findViewById(R.id.loadingPanel).setVisibility(View.INVISIBLE);
-
-            if (dpwidth < 550) {
-                spinnerAdapter.notifyDataSetChanged();
-                listViewAdapter.notifyDataSetChanged();
-            } else {
-                listaFrag.azurirajKategorije(kategorije);
-                detailFrag.azurirajKvizove(kvizovi);
-            }
-        }
-    }
 
 
     private static class getAccessToken extends AsyncTask<String, Void, Void> {

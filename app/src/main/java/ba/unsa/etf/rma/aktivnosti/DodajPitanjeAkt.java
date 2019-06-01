@@ -1,6 +1,7 @@
 package ba.unsa.etf.rma.aktivnosti;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -23,14 +24,15 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 import ba.unsa.etf.rma.R;
-import ba.unsa.etf.rma.klase.FirebaseIntentService;
-import ba.unsa.etf.rma.klase.FirebaseResultReceiver;
-import ba.unsa.etf.rma.klase.Pitanje;
+import ba.unsa.etf.rma.firestore.FirestoreIntentService;
+import ba.unsa.etf.rma.firestore.FirestoreResultReceiver;
+import ba.unsa.etf.rma.modeli.Pitanje;
 
-import static ba.unsa.etf.rma.klase.FirebaseIntentService.VALIDNO_PITANJE;
+import static ba.unsa.etf.rma.firestore.FirestoreIntentService.AZURIRAJ_PITANJA;
 
-public class DodajPitanjeAkt extends AppCompatActivity implements FirebaseResultReceiver.Receiver {
+public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResultReceiver.Receiver {
 
+    private Context context;
     private EditText etNaziv;
     private EditText etOdgovor;
     private Button btnDodajTacan;
@@ -41,16 +43,17 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirebaseResult
     private Pitanje novoPitanje = null;
 
     private String TOKEN = "";
-    public FirebaseResultReceiver receiver;
+    public FirestoreResultReceiver receiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dodaj_pitanje_akt);
 
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN); // (°͜ʖ°)
 
-        receiver = new FirebaseResultReceiver(new Handler());
+        context = this;
+        receiver = new FirestoreResultReceiver(new Handler());
         receiver.setReceiver(this);
 
         etNaziv = findViewById(R.id.etNaziv);
@@ -142,7 +145,7 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirebaseResult
             @Override
             public void onClick(View v) {
                 if (validnoPitanje())
-                    firestoreRequest(VALIDNO_PITANJE);
+                    firestoreRequest();
                 else {
                     if (novoPitanje.getTacan() == null)
                         etOdgovor.setError("Potrebno je unijeti tačan odgovor!");
@@ -153,38 +156,39 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirebaseResult
         });
     }
 
-    private void dodajPitanje(String nazivPitanja) {
-        Intent intent = new Intent();
-        novoPitanje.setNaziv(nazivPitanja);
-        novoPitanje.setTekstPitanja(etNaziv.getText().toString());
-        intent.putExtra("novoPitanje", novoPitanje);
-        setResult(RESULT_OK, intent);
-        finish();
-    }
-
-    private void firestoreRequest(int request) {
-        String naziv = etNaziv.getText().toString();
-        final Intent intent = new Intent(Intent.ACTION_SYNC, null, DodajPitanjeAkt.this, FirebaseIntentService.class);
-        intent.putExtra("receiver", receiver);
-        intent.putExtra("token", TOKEN);
-        intent.putExtra("request", request);
-        intent.putExtra("nazivPitanja", naziv);
-        startService(intent);
-    }
-
     boolean validnoPitanje() {
         return etNaziv.getText().length() != 0 && novoPitanje.getTacan() != null;
     }
 
-    @Override
-    public void onReceiveResult(int resultCode, Bundle resultData) {
-        if (resultCode == FirebaseIntentService.VALIDNO_PITANJE) {
-            if (resultData.getBoolean("postojiPitanje"))
-                throwAlert(resultData.getString("nazivPitanja"));
-            else {
-                dodajPitanje(resultData.getString("nazivPitanja"));
-            }
-        }
+    private void firestoreRequest() {
+        String naziv = etNaziv.getText().toString();
+        final Intent intent = new Intent(Intent.ACTION_SYNC, null, DodajPitanjeAkt.this, FirestoreIntentService.class);
+        intent.putExtra("receiver", receiver);
+        intent.putExtra("token", TOKEN);
+        intent.putExtra("request", FirestoreIntentService.VALIDNO_PITANJE);
+        intent.putExtra("nazivPitanja", naziv);
+        startService(intent);
+    }
+
+    private void patchQuestionDocumentOnFirebase(Pitanje novoPitanje) {
+        final Intent intent = new Intent(Intent.ACTION_SEND, null, context, FirestoreIntentService.class);
+        intent.putExtra("receiver", receiver);
+        intent.putExtra("token", TOKEN);
+        intent.putExtra("request", AZURIRAJ_PITANJA);
+        intent.putExtra("pitanje", novoPitanje);
+        startService(intent);
+    }
+
+
+    private void dodajPitanje(String nazivPitanja) {
+        novoPitanje.setNaziv(nazivPitanja);
+        novoPitanje.setTekstPitanja(etNaziv.getText().toString());
+        patchQuestionDocumentOnFirebase(novoPitanje);
+
+        Intent intent = new Intent();
+        intent.putExtra("novoPitanje", novoPitanje);
+        setResult(RESULT_OK, intent);
+        finish();
     }
 
     private void throwAlert(String naziv) {
@@ -194,4 +198,15 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirebaseResult
         alertDialog.create();
         alertDialog.show();
     }
+
+    @Override
+    public void onReceiveResult(int resultCode, Bundle resultData) {
+        if (resultCode == FirestoreIntentService.VALIDNO_PITANJE) {
+            if (resultData.getBoolean("postojiPitanje"))
+                throwAlert(resultData.getString("nazivPitanja"));
+            else
+                dodajPitanje(resultData.getString("nazivPitanja"));
+        }
+    }
+
 }

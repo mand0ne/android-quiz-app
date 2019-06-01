@@ -1,6 +1,7 @@
 package ba.unsa.etf.rma.aktivnosti;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -13,30 +14,34 @@ import com.maltaisn.icondialog.Icon;
 import com.maltaisn.icondialog.IconDialog;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import ba.unsa.etf.rma.R;
-import ba.unsa.etf.rma.klase.FirebaseIntentService;
-import ba.unsa.etf.rma.klase.FirebaseResultReceiver;
-import ba.unsa.etf.rma.klase.Kategorija;
+import ba.unsa.etf.rma.firestore.FirestoreIntentService;
+import ba.unsa.etf.rma.firestore.FirestoreResultReceiver;
+import ba.unsa.etf.rma.modeli.Kategorija;
 
-import static ba.unsa.etf.rma.klase.FirebaseIntentService.VALIDNA_KATEGORIJA;
+import static ba.unsa.etf.rma.firestore.FirestoreIntentService.AZURIRAJ_KATEGORIJE;
+import static ba.unsa.etf.rma.firestore.FirestoreIntentService.VALIDNA_KATEGORIJA;
 
-public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.Callback, FirebaseResultReceiver.Receiver {
+public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.Callback, FirestoreResultReceiver.Receiver {
 
+    private Context context;
     private EditText etNaziv;
     private EditText etIkona;
 
     private Icon[] selectedIcons;
 
     private String TOKEN = "";
-    public FirebaseResultReceiver receiver;
+    public FirestoreResultReceiver receiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dodaj_kategoriju_akt);
 
-        receiver = new FirebaseResultReceiver(new Handler());
+        context = this;
+        receiver = new FirestoreResultReceiver(new Handler());
         receiver.setReceiver(this);
 
         etNaziv = findViewById(R.id.etNaziv);
@@ -62,7 +67,7 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
             @Override
             public void onClick(View v) {
                 if (validanUnos())
-                    firestoreRequest(VALIDNA_KATEGORIJA);
+                    firestoreRequest();
                 else {
                     if (etNaziv.getText().toString().length() == 0)
                         etNaziv.setError("Unesite naziv kategorije!");
@@ -79,43 +84,41 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         return etIkona.getText().length() != 0 && etNaziv.getText().length() != 0;
     }
 
+
     @Override
     public void onIconDialogIconsSelected(Icon[] icons) {
         selectedIcons = icons;
         etIkona.setText(String.valueOf(selectedIcons[0].getId()));
     }
 
-
-    private void dodajKategoriju(String nazivKategorije, ArrayList<Kategorija> noveKategorije) {
-        Intent intent = new Intent();
-        if(nazivKategorije != null)
-            noveKategorije.add(new Kategorija(nazivKategorije, etIkona.getText().toString()));
-
-        intent.putExtra("noveKategorije", noveKategorije);
-        setResult(RESULT_OK, intent);
-        finish();
-    }
-
-    private void firestoreRequest(int request) {
+    private void firestoreRequest() {
         String naziv = etNaziv.getText().toString();
-        final Intent intent = new Intent(Intent.ACTION_SYNC, null, DodajKategorijuAkt.this, FirebaseIntentService.class);
+        final Intent intent = new Intent(Intent.ACTION_SYNC, null, DodajKategorijuAkt.this, FirestoreIntentService.class);
         intent.putExtra("receiver", receiver);
         intent.putExtra("token", TOKEN);
-        intent.putExtra("request", request);
+        intent.putExtra("request", FirestoreIntentService.VALIDNA_KATEGORIJA);
         intent.putExtra("nazivKategorije", naziv);
         startService(intent);
     }
 
-    @Override
-    public void onReceiveResult(int resultCode, Bundle resultData) {
-        if (resultCode == VALIDNA_KATEGORIJA) {
-            if (resultData.getBoolean("postojiKategorija"))
-                throwAlert(resultData.getString("nazivKategorije"));
-            else {
-                dodajKategoriju(resultData.getString("nazivKategorije"),
-                        resultData.<Kategorija>getParcelableArrayList("noveKategorije"));
-            }
-        }
+    private void patchCategoryDocumentOnFirebase(Kategorija kategorija) {
+        final Intent intent = new Intent(Intent.ACTION_SEND, null, context, FirestoreIntentService.class);
+        intent.putExtra("receiver", receiver);
+        intent.putExtra("token", TOKEN);
+        intent.putExtra("request", AZURIRAJ_KATEGORIJE);
+        intent.putExtra("kategorija", kategorija);
+        startService(intent);
+    }
+
+    private void dodajKategoriju(String nazivKategorije, ArrayList<Kategorija> noveKategorije) {
+        Kategorija novaKategorija = new Kategorija(nazivKategorije, etIkona.getText().toString());
+        patchCategoryDocumentOnFirebase(novaKategorija);
+        noveKategorije.add(novaKategorija);
+
+        Intent intent = new Intent();
+        intent.putExtra("noveKategorije", noveKategorije);
+        setResult(RESULT_OK, intent);
+        finish();
     }
 
     private void throwAlert(String naziv) {
@@ -124,5 +127,16 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         alertDialog.setMessage("Kategorija sa nazivom: \"" + naziv + "\" već postoji!");
         alertDialog.create();
         alertDialog.show();
+    }
+
+    @Override
+    public void onReceiveResult(int resultCode, Bundle resultData) {
+        if (resultCode == VALIDNA_KATEGORIJA) {
+            if (resultData.getBoolean("postojiKategorija"))
+                throwAlert(resultData.getString("nazivKategorije"));
+            else
+                dodajKategoriju(resultData.getString("nazivKategorije"),
+                        Objects.requireNonNull(resultData.<Kategorija>getParcelableArrayList("noveKategorije")));
+        }
     }
 }

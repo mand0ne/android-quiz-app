@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -26,15 +27,15 @@ import java.util.Random;
 
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.aktivnosti.IgrajKvizAkt;
-import ba.unsa.etf.rma.klase.Kviz;
-import ba.unsa.etf.rma.klase.Pitanje;
-import ba.unsa.etf.rma.klase.SharedViewModel;
+import ba.unsa.etf.rma.modeli.Kviz;
+import ba.unsa.etf.rma.modeli.Pitanje;
+import ba.unsa.etf.rma.customKlase.IgraViewModel;
 
 public class PitanjeFrag extends Fragment {
 
     private TextView tekstPitanja;
     private ListView odgovoriPitanja;
-    private SharedViewModel model;
+    private IgraViewModel model;
     private ArrayList<Pitanje> kvizPitanja = new ArrayList<>();
     private Pitanje trenutnoPitanje = null;
     private ArrayList<String> odgovori = new ArrayList<>();
@@ -104,7 +105,7 @@ public class PitanjeFrag extends Fragment {
         };
 
         odgovoriPitanja.setAdapter(oAdapter);
-        model = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
+        model = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(IgraViewModel.class);
 
         odgovoriPitanja.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -140,9 +141,7 @@ public class PitanjeFrag extends Fragment {
                             odgovori.clear();
                             oAdapter.notifyDataSetChanged();
                             tekstPitanja.setText("Kviz je završen!");
-
-
-
+                            unosRangLista();
                         }
                     }, 2000);
                 }
@@ -150,35 +149,34 @@ public class PitanjeFrag extends Fragment {
         });
     }
 
-    private void unosRangLista(){
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Unesite ime:");
-        String unos;
-
-        // Set up the input
+    private void unosRangLista() {
         final EditText input = new EditText(getContext());
+        AlertDialog alert = new AlertDialog.Builder(getActivity())
+                .setTitle("Kviz završen!")
+                .setMessage("Unesite nickname:")
+                .setView(input)
+                .setPositiveButton("OK", null)
+                .create();
 
-        // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
-        input.setInputType(InputType.TYPE_CLASS_TEXT);
-        builder.setView(input);
-
-        // Set up the buttons
-        builder.setPositiveButton("Prikaži rang", new DialogInterface.OnClickListener() {
+        alert.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-               String unos = input.getText().toString();
-
-                ((IgrajKvizAkt) getActivity()).azurirajRangListuIPrikazi();
+            public void onShow(final DialogInterface dialog) {
+                Button buttonOk = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_POSITIVE);
+                if (buttonOk != null) {
+                    buttonOk.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            if (input.getText() != null && !input.getText().toString().trim().isEmpty()) {
+                                dialog.cancel();
+                                ((IgrajKvizAkt) Objects.requireNonNull(getActivity())).azurirajRangListuIPrikazi(input.getText().toString(), model.getSkor().getValue());
+                            } else
+                                input.setError("Morate unijeti ime i prezime");
+                        }
+                    });
+                }
             }
         });
 
-        builder.setNegativeButton("Nazad", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-
-        builder.show();
+        alert.show();
     }
 }

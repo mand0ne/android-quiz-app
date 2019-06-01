@@ -1,20 +1,38 @@
-package ba.unsa.etf.rma.klase;
+package ba.unsa.etf.rma.firestore;
+
+import android.os.Parcelable;
+import android.util.Log;
+import android.util.Pair;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
+
+import ba.unsa.etf.rma.fragmenti.RangLista;
+import ba.unsa.etf.rma.modeli.Kategorija;
+import ba.unsa.etf.rma.modeli.Kviz;
+import ba.unsa.etf.rma.modeli.Pitanje;
+import ba.unsa.etf.rma.modeli.RangListaKviz;
+
+import static android.content.ContentValues.TAG;
 
 class FirestoreJsonParser {
 
     private boolean filter;
 
-    public FirestoreJsonParser(){
+    FirestoreJsonParser() {
         filter = false;
     }
 
-    public FirestoreJsonParser(boolean b){
+    FirestoreJsonParser(boolean b) {
         filter = b;
     }
 
@@ -26,16 +44,23 @@ class FirestoreJsonParser {
             JSONArray dokumenti = dokumentObjekat.getJSONArray("documents");
 
             for (int i = 0; i < dokumenti.length(); i++) {
-                try{
+                try {
                     Kategorija novaKategorija = parsirajDokumentKategorije(dokumenti.getJSONObject(i));
                     if (novaKategorija != null)
                         listaKategorija.add(novaKategorija);
-                }catch(Exception e){}
+                } catch (Exception ignored) {
+                }
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
+        Collections.sort(listaKategorija, new Comparator<Kategorija>() {
+            @Override
+            public int compare(Kategorija o1, Kategorija o2) {
+                return o1.getNaziv().compareTo(o2.getNaziv());
+            }
+        });
         return listaKategorija;
     }
 
@@ -43,7 +68,7 @@ class FirestoreJsonParser {
         String name = kategorija.getString("name");
         int index = name.indexOf("Kategorije");
         String firebaseId = name.substring(index + 11);
-        String naziv = null, idIkonice = null;
+        String naziv , idIkonice;
 
         JSONObject fields = kategorija.getJSONObject("fields");
         JSONObject nazivKategorije = fields.getJSONObject("naziv");
@@ -52,7 +77,7 @@ class FirestoreJsonParser {
         JSONObject jsonId = fields.getJSONObject("idIkonice");
         idIkonice = jsonId.getString("integerValue");
 
-        if(naziv == null || idIkonice == null)
+        if (naziv == null || idIkonice == null)
             return null;
 
         return new Kategorija(naziv, idIkonice, firebaseId);
@@ -81,8 +106,8 @@ class FirestoreJsonParser {
         String name = pitanje.getString("name");
         int index = name.indexOf("Pitanja");
         String firebaseId = name.substring(index + 8);
-        String naziv = null;
-        Integer indexTacnog = null;
+        String naziv;
+        Integer indexTacnog;
         ArrayList<String> odgovori = new ArrayList<>();
 
 
@@ -97,10 +122,10 @@ class FirestoreJsonParser {
         JSONObject jsonOdgovori2 = jsonOdgovori.getJSONObject("arrayValue");
         JSONArray jsonOdgovoriArray = jsonOdgovori2.getJSONArray("values");
 
-        for(int i = 0; i < jsonOdgovoriArray.length(); i++)
+        for (int i = 0; i < jsonOdgovoriArray.length(); i++)
             odgovori.add(jsonOdgovoriArray.getJSONObject(i).getString("stringValue"));
 
-        if (naziv == null || indexTacnog == null || odgovori.isEmpty())
+        if (naziv == null || odgovori.isEmpty())
             return null;
 
         return new Pitanje(naziv, naziv, odgovori, odgovori.get(indexTacnog), firebaseId);
@@ -115,7 +140,7 @@ class FirestoreJsonParser {
 
             for (int i = 0; i < dokumenti.length(); i++) {
                 JSONObject jsonObjectKviz = dokumenti.getJSONObject(i);
-                if(filter)
+                if (filter)
                     jsonObjectKviz = jsonObjectKviz.getJSONObject("document");
 
                 Kviz noviKviz = parsirajDokumentKviz(jsonObjectKviz, kategorije, pitanja);
@@ -134,7 +159,7 @@ class FirestoreJsonParser {
         String name = kviz.getString("name");
         int index = name.indexOf("Kvizovi");
         String firebaseId = name.substring(index + 8);
-        String naziv = null, idKategorije = null;
+        String naziv, idKategorije;
         ArrayList<String> idPitanja = new ArrayList<>();
 
         JSONObject fields = kviz.getJSONObject("fields");
@@ -147,12 +172,12 @@ class FirestoreJsonParser {
 
         try {
             JSONObject jsonPitanja = fields.getJSONObject("pitanja");
-            JSONObject jsonPitanjaArrayValue= jsonPitanja.getJSONObject("arrayValue");
+            JSONObject jsonPitanjaArrayValue = jsonPitanja.getJSONObject("arrayValue");
             JSONArray jsonPitanjaArray = jsonPitanjaArrayValue.getJSONArray("values");
 
-            for(int i = 0; i < jsonPitanjaArray.length(); i++)
+            for (int i = 0; i < jsonPitanjaArray.length(); i++)
                 idPitanja.add(jsonPitanjaArray.getJSONObject(i).getString("stringValue"));
-        }catch (Exception e){
+        } catch (Exception ignored) {
 
         }
 
@@ -174,5 +199,45 @@ class FirestoreJsonParser {
         }
 
         return new Kviz(naziv, pitanjaKviza, kategorijaKviza, firebaseId);
+    }
+
+    RangListaKviz parsirajRangListu(String rangListaFirebase) {
+        RangListaKviz rangLista = new RangListaKviz(null, null);
+        ArrayList<Pair<String, Double>> lista = new ArrayList<>();
+
+        try {
+            JSONObject dokumentObjekat = new JSONObject(rangListaFirebase);
+            JSONArray dokumenti = dokumentObjekat.getJSONArray("documents");
+
+            JSONObject jsonObjectRangLista = dokumenti.getJSONObject(0);
+            if (filter)
+                jsonObjectRangLista = jsonObjectRangLista.getJSONObject("document");
+
+
+            JSONObject fields = jsonObjectRangLista.getJSONObject("fields");
+            JSONObject jsonLista = fields.getJSONObject("lista").getJSONObject("mapValue").getJSONObject("fields");
+
+            int pozicija = 1;
+            while (true) {
+                JSONObject rezultat = jsonLista.getJSONObject(String.valueOf(pozicija)).getJSONObject("mapValue")
+                        .getJSONObject("fields");
+
+                JSONArray imena = rezultat.names();
+                final String imeIgraca = imena.toString().replaceAll("\\[\"", "").replaceAll("\"]", "");
+                JSONObject igrac = rezultat.getJSONObject(imeIgraca);
+                final double skor = igrac.getDouble("doubleValue");
+
+                lista.add(new Pair<>(imeIgraca, skor));
+                pozicija++;
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+
+        rangLista.setLista(lista);
+        Log.wtf("KOLICINA:", String.valueOf(lista.size()));
+        return rangLista;
     }
 }

@@ -2,9 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ba.unsa.etf.rma">
 
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -13,28 +13,35 @@
         android:roundIcon="@mipmap/ic_launcher2_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".aktivnosti.IgrajKvizAkt"
+        <activity android:name=".aktivnosti.MainActivity">
+
+        </activity>
+
+        <activity
+            android:name=".aktivnosti.IgrajKvizAkt"
             android:configChanges="orientation|screenSize">
         </activity>
+
         <activity
             android:name=".aktivnosti.DodajKategorijuAkt"
             android:configChanges="orientation|screenSize" />
+
         <activity
             android:name=".aktivnosti.DodajPitanjeAkt"
             android:configChanges="orientation|screenSize" />
+
         <activity
             android:name=".aktivnosti.DodajKvizAkt"
             android:configChanges="orientation|screenSize" />
-        <activity
-            android:name=".aktivnosti.KvizoviAkt">
+
+        <activity android:name=".aktivnosti.KvizoviAkt">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <service android:name=".klase.FirebaseIntentService" />
+        <service android:name=".firestore.FirestoreIntentService" />
     </application>
 
 </manifest>

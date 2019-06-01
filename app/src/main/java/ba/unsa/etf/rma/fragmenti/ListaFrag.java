@@ -12,11 +12,12 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import ba.unsa.etf.rma.R;
-import ba.unsa.etf.rma.klase.CustomAdapter;
-import ba.unsa.etf.rma.klase.Kategorija;
-import ba.unsa.etf.rma.klase.KvizoviViewModel;
+import ba.unsa.etf.rma.customKlase.CustomAdapter;
+import ba.unsa.etf.rma.modeli.Kategorija;
+import ba.unsa.etf.rma.customKlase.KvizoviViewModel;
 
 public class ListaFrag extends Fragment {
 
@@ -52,7 +53,7 @@ public class ListaFrag extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        kategorijaAdapter = new CustomAdapter(getActivity(), kategorije);
+        kategorijaAdapter = new CustomAdapter(Objects.requireNonNull(getActivity()), kategorije);
         listaKategorija.setAdapter(kategorijaAdapter);
 
         model = ViewModelProviders.of(getActivity()).get(KvizoviViewModel.class);
@@ -69,7 +70,6 @@ public class ListaFrag extends Fragment {
 
     public void azurirajKategorije(ArrayList<Kategorija> noveKategorije) {
         kategorije.clear();
-        kategorije.add(new Kategorija("Svi", "-1"));
         kategorije.addAll(noveKategorije);
         kategorijaAdapter.notifyDataSetChanged();
     }

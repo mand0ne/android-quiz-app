@@ -1,7 +1,6 @@
-package ba.unsa.etf.rma.klase;
+package ba.unsa.etf.rma.customKlase;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -18,6 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ba.unsa.etf.rma.R;
+import ba.unsa.etf.rma.modeli.Kategorija;
+import ba.unsa.etf.rma.modeli.Kviz;
+import ba.unsa.etf.rma.modeli.Pitanje;
 
 
 public class CustomAdapter extends ArrayAdapter<Object> {

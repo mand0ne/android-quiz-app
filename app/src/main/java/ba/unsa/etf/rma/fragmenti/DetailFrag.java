@@ -13,16 +13,17 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
 
+
 import java.util.ArrayList;
 import java.util.Objects;
 
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.aktivnosti.KvizoviAkt;
-import ba.unsa.etf.rma.klase.FirebaseIntentService;
-import ba.unsa.etf.rma.klase.GridViewAdapter;
-import ba.unsa.etf.rma.klase.Kategorija;
-import ba.unsa.etf.rma.klase.Kviz;
-import ba.unsa.etf.rma.klase.KvizoviViewModel;
+import ba.unsa.etf.rma.firestore.FirestoreIntentService;
+import ba.unsa.etf.rma.customKlase.GridViewAdapter;
+import ba.unsa.etf.rma.modeli.Kategorija;
+import ba.unsa.etf.rma.modeli.Kviz;
+import ba.unsa.etf.rma.customKlase.KvizoviViewModel;
 
 public class DetailFrag extends Fragment {
 
@@ -41,11 +42,12 @@ public class DetailFrag extends Fragment {
         super.onCreate(savedInstanceState);
 
         trenutnaKategorija = null;
+        assert getArguments() != null;
         kvizoviFragment = new ArrayList<>(Objects.requireNonNull(getArguments().<Kviz>getParcelableArrayList("kvizovi")));
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_detail, container, false);
     }
 
@@ -53,7 +55,7 @@ public class DetailFrag extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        gridKvizovi = Objects.requireNonNull(getView()).findViewById(R.id.gridKvizovi);
+        gridKvizovi = view.findViewById(R.id.gridKvizovi);
     }
 
     @Override
@@ -100,10 +102,10 @@ public class DetailFrag extends Fragment {
     }
 
     private void filtrirajKvizove() {
-        final Intent intent = new Intent(Intent.ACTION_SYNC, null, getActivity(), FirebaseIntentService.class);
+        final Intent intent = new Intent(Intent.ACTION_SYNC, null, getActivity(), FirestoreIntentService.class);
         intent.putExtra("receiver", ((KvizoviAkt) Objects.requireNonNull(getActivity())).receiver);
         intent.putExtra("token", ((KvizoviAkt) getActivity()).getTOKEN());
-        intent.putExtra("request", FirebaseIntentService.FILTRIRAJ_KVIZOVE);
+        intent.putExtra("request", FirestoreIntentService.FILTRIRAJ_KVIZOVE);
         intent.putExtra("kategorijaId", trenutnaKategorija.firebaseId());
         getActivity().startService(intent);
     }

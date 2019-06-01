@@ -18,12 +18,12 @@ import java.math.RoundingMode;
 import java.util.Objects;
 
 import ba.unsa.etf.rma.R;
-import ba.unsa.etf.rma.klase.Kviz;
-import ba.unsa.etf.rma.klase.SharedViewModel;
+import ba.unsa.etf.rma.modeli.Kviz;
+import ba.unsa.etf.rma.customKlase.IgraViewModel;
 
 public class InformacijeFrag extends Fragment {
 
-    private SharedViewModel model;
+    private IgraViewModel model;
     private Kviz trenutniKviz;
     private int brojTacnihPitanja;
     private int brojPreostalihPitanja;
@@ -66,7 +66,7 @@ public class InformacijeFrag extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         if (isAdded()) {
-            model = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
+            model = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(IgraViewModel.class);
             model.getOdgovor().observe(getViewLifecycleOwner(), new Observer<Boolean>() {
                 @Override
                 public void onChanged(@Nullable Boolean odgovor) {
@@ -75,6 +75,7 @@ public class InformacijeFrag extends Fragment {
                         brojTacnihPitanja++;
 
                     procenatTacnih = (double) brojTacnihPitanja / (trenutniKviz.getPitanja().size() - brojPreostalihPitanja);
+                    model.setSkor(procenatTacnih);
                     azurirajBrojPreostalih(true);
 
                     azuriraj();

@@ -1,13 +1,13 @@
-package ba.unsa.etf.rma.klase;
+package ba.unsa.etf.rma.firestore;
 
 import android.app.IntentService;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.os.ResultReceiver;
 import android.support.annotation.Nullable;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -19,13 +19,35 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
+import ba.unsa.etf.rma.fragmenti.RangLista;
+import ba.unsa.etf.rma.modeli.Kategorija;
+import ba.unsa.etf.rma.modeli.Kviz;
+import ba.unsa.etf.rma.modeli.Pitanje;
+import ba.unsa.etf.rma.modeli.RangListaKviz;
+
 import static android.app.Activity.RESULT_OK;
 
-public class FirebaseIntentService extends IntentService {
-    private static final String TAG = "FirebaseIntentService";
+public class FirestoreIntentService extends IntentService {
+    private static final String TAG = "FirestoreIntentService";
 
     private String databaseUrl =
             "https://firestore.googleapis.com/v1/projects/rma19mandalanel18088/databases/(default)/documents";
+
+    public enum QUERY_TYPE {
+        GET("GET"), POST("POST"), PATCH("PATCH");
+
+        private final String text;
+
+        QUERY_TYPE(final String text) {
+            this.text = text;
+        }
+
+        @Override
+        public String toString() {
+            return text;
+        }
+    }
+
     private String token;
     private URL url;
     private HttpURLConnection connection;
@@ -33,23 +55,29 @@ public class FirebaseIntentService extends IntentService {
     public static final int DOHVATI_KATEGORIJE = 100;
     public static final int DOHVATI_KVIZOVE = 101;
     public static final int DOHVATI_PITANJA = 102;
-    public static final int FILTRIRAJ_KVIZOVE = 103;
+    public static final int DOHVATI_RANG_LISTU = 103;
+
+    public static final int FILTRIRAJ_KVIZOVE = 110;
 
     public static final int VALIDNA_KATEGORIJA = 200;
     public static final int VALIDAN_KVIZ = 201;
     public static final int VALIDNO_PITANJE = 202;
 
-    public FirebaseIntentService() {
+    public static final int AZURIRAJ_KATEGORIJE = 300;
+    public static final int AZURIRAJ_KVIZOVE = 301;
+    public static final int AZURIRAJ_PITANJA = 302;
+
+    public FirestoreIntentService() {
         super(TAG);
     }
 
-    public FirebaseIntentService(String name) {
+    public FirestoreIntentService(String name) {
         super(name);
-        setIntentRedelivery(false);
     }
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
+        assert intent != null;
         final ResultReceiver resultReceiver = intent.getParcelableExtra("receiver");
         token = intent.getStringExtra("token");
         final int request = intent.getIntExtra("request", 0);
@@ -80,6 +108,17 @@ public class FirebaseIntentService extends IntentService {
                     e.printStackTrace();
                 }
                 break;
+            case DOHVATI_RANG_LISTU:
+                try {
+                    String nazivKviza = intent.getStringExtra("nazivKviza");
+                    String kvizFirebaseId = intent.getStringExtra("kvizFirebaseId");
+                    bundle.putParcelable("rangLista", dohvatiRangListu(nazivKviza, kvizFirebaseId));
+                    bundle.putString("nickname", intent.getStringExtra("nickname"));
+                    bundle.putDouble("skor", intent.getDoubleExtra("skor", 0.0));
+                    resultReceiver.send(DOHVATI_RANG_LISTU, bundle);
+                } catch (Exception ignored) {
+                }
+                break;
             case FILTRIRAJ_KVIZOVE:
                 try {
                     ArrayList<Kategorija> kategorije = importCategories();
@@ -87,6 +126,17 @@ public class FirebaseIntentService extends IntentService {
                     bundle.putParcelableArrayList("kvizovi",
                             importSpecificQuizzes(kategorije, intent.getStringExtra("kategorijaId")));
                     resultReceiver.send(RESULT_OK, bundle);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
+            case VALIDNA_KATEGORIJA:
+                try {
+                    String nazivKategorije = intent.getStringExtra("nazivKategorije");
+                    bundle.putBoolean("postojiKategorija", postojiKategorija(nazivKategorije));
+                    bundle.putString("nazivKategorije", nazivKategorije);
+                    bundle.putParcelableArrayList("noveKategorije", importCategories());
+                    resultReceiver.send(VALIDNA_KATEGORIJA, bundle);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -118,13 +168,23 @@ public class FirebaseIntentService extends IntentService {
                     e.printStackTrace();
                 }
                 break;
-            case VALIDNA_KATEGORIJA:
+            case AZURIRAJ_KATEGORIJE:
                 try {
-                    String nazivKategorije = intent.getStringExtra("nazivKategorije");
-                    bundle.putBoolean("postojiKategorija", postojiKategorija(nazivKategorije));
-                    bundle.putString("nazivKategorije", nazivKategorije);
-                    bundle.putParcelableArrayList("noveKategorije", importCategories());
-                    resultReceiver.send(VALIDNA_KATEGORIJA, bundle);
+                    azurirajKategorije((Kategorija) intent.getParcelableExtra("kategorija"));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
+            case AZURIRAJ_KVIZOVE:
+                try {
+                    azurirajKvizove((Kviz) intent.getParcelableExtra("kviz"));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
+            case AZURIRAJ_PITANJA:
+                try {
+                    azurirajPitanja((Pitanje) intent.getParcelableExtra("pitanje"));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -135,13 +195,13 @@ public class FirebaseIntentService extends IntentService {
 
     }
 
-    private void openConnection(boolean query) throws Exception {
+    private void openConnection(QUERY_TYPE query) throws Exception {
         connection = (HttpURLConnection) url.openConnection();
-        if (query) {
+
+        if (query == QUERY_TYPE.POST || query == QUERY_TYPE.PATCH)
             connection.setDoOutput(true);
-            connection.setRequestMethod("POST");
-        } else
-            connection.setRequestMethod("GET");
+
+        connection.setRequestMethod(query.toString());
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setRequestProperty("Accept", "application/json");
     }
@@ -149,7 +209,7 @@ public class FirebaseIntentService extends IntentService {
     private String getResponse() throws Exception {
         String inputLine;
 
-        InputStreamReader streamReader = new InputStreamReader(connection.getInputStream());
+        InputStreamReader streamReader = new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);
         BufferedReader reader = new BufferedReader(streamReader);
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -164,10 +224,11 @@ public class FirebaseIntentService extends IntentService {
         return stringBuilder.toString();
     }
 
+
     private ArrayList<Kategorija> importCategories() throws Exception {
         String connectionUrl = databaseUrl + "/Kategorije?fields=documents(fields%2Cname)" + "&access_token=";
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(false);
+        openConnection(QUERY_TYPE.GET);
 
         FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser();
         String listaKategorija = getResponse();
@@ -177,7 +238,7 @@ public class FirebaseIntentService extends IntentService {
     private ArrayList<Pitanje> importQuestions() throws Exception {
         String connectionUrl = databaseUrl + "/Pitanja?fields=documents(fields%2Cname)" + "&access_token=";
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(false);
+        openConnection(QUERY_TYPE.GET);
 
         FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser();
         String listaPitanja = getResponse();
@@ -187,7 +248,7 @@ public class FirebaseIntentService extends IntentService {
     private ArrayList<Kviz> importQuizzes(ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja) throws Exception {
         String connectionUrl = databaseUrl + "/Kvizovi?fields=documents(fields%2Cname)" + "&access_token=";
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(false);
+        openConnection(QUERY_TYPE.GET);
 
         FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser();
         String listaKvizova = getResponse();
@@ -237,7 +298,8 @@ public class FirebaseIntentService extends IntentService {
         String connectionUrl = databaseUrl + ":runQuery?fields=document(fields%2Cname)&access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(true);
+        openConnection(QUERY_TYPE.POST);
+
         try (OutputStream os = connection.getOutputStream()) {
             byte[] input = structuredQuery.getBytes("utf-8");
             os.write(input, 0, input.length);
@@ -247,6 +309,59 @@ public class FirebaseIntentService extends IntentService {
         String listaKvizova = getResponse();
         listaKvizova = "{\n\"documents\":" + listaKvizova + "}";
         return firestoreJsonParser.parsirajKvizove(listaKvizova, importCategories(), importQuestions());
+    }
+
+    private RangListaKviz dohvatiRangListu(String nazivKviza, String kvizFirebaseId) throws Exception {
+        String structuredQuery = "{\n" +
+                " \"structuredQuery\": {\n" +
+                "  \"select\": {\n" +
+                "   \"fields\": [\n" +
+                "    {\n" +
+                "     \"fieldPath\": \"lista\"\n" +
+                "    },\n" +
+                "    {\n" +
+                "     \"fieldPath\": \"nazivKviza\"\n" +
+                "    }\n" +
+                "   ]\n" +
+                "  },\n" +
+                "  \"from\": [\n" +
+                "   {\n" +
+                "    \"collectionId\": \"Rangliste\"\n" +
+                "   }\n" +
+                "  ],\n" +
+                "  \"where\": {\n" +
+                "   \"fieldFilter\": {\n" +
+                "    \"field\": {\n" +
+                "     \"fieldPath\": \"nazivKviza\"\n" +
+                "    },\n" +
+                "    \"op\": \"EQUAL\",\n" +
+                "    \"value\": {\n" +
+                "     \"stringValue\": \"" + nazivKviza + "\"\n" +
+                "    }\n" +
+                "   }\n" +
+                "  },\n" +
+                "  \"limit\": 1\n" +
+                " }\n" +
+                "}\n" +
+                "\n";
+
+        String connectionUrl = databaseUrl + ":runQuery?fields=document(fields%2Cname)&access_token=";
+
+        url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
+        openConnection(QUERY_TYPE.POST);
+
+        try (OutputStream os = connection.getOutputStream()) {
+            byte[] input = structuredQuery.getBytes(StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        }
+
+        String rangListaJson = getResponse();
+        FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser(true);
+        rangListaJson = "{\n\"documents\":" + rangListaJson + "}";
+        RangListaKviz rangListaKviz = firestoreJsonParser.parsirajRangListu(rangListaJson);
+        rangListaKviz.setNazivKviza(nazivKviza);
+        rangListaKviz.setKvizFirebaseId(kvizFirebaseId);
+        return rangListaKviz;
     }
 
     private boolean postojiKviz(String nazivKviza) throws Exception {
@@ -281,9 +396,9 @@ public class FirebaseIntentService extends IntentService {
         String connectionUrl = databaseUrl + ":runQuery?fields=document(fields%2Cname)&access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(true);
+        openConnection(QUERY_TYPE.POST);
         try (OutputStream os = connection.getOutputStream()) {
-            byte[] input = structuredQuery.getBytes("utf-8");
+            byte[] input = structuredQuery.getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
         }
 
@@ -330,9 +445,9 @@ public class FirebaseIntentService extends IntentService {
         String connectionUrl = databaseUrl + ":runQuery?fields=document(fields%2Cname)&access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(true);
+        openConnection(QUERY_TYPE.POST);
         try (OutputStream os = connection.getOutputStream()) {
-            byte[] input = structuredQuery.getBytes("utf-8");
+            byte[] input = structuredQuery.getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
         }
 
@@ -379,7 +494,8 @@ public class FirebaseIntentService extends IntentService {
         String connectionUrl = databaseUrl + ":runQuery?fields=document(fields%2Cname)&access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(true);
+        openConnection(QUERY_TYPE.POST);
+
         try (OutputStream os = connection.getOutputStream()) {
             byte[] input = structuredQuery.getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
@@ -395,4 +511,86 @@ public class FirebaseIntentService extends IntentService {
             return false;
         }
     }
+
+
+    private void azurirajKategorije(Kategorija kategorija) throws Exception {
+        String connectionUrl = databaseUrl + "/Kategorije/" + kategorija.firebaseId() + "?access_token=";
+
+        url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
+        openConnection(QUERY_TYPE.PATCH);
+
+        String dokument = "{\"fields\": { \"naziv\": {\"stringValue\": \"" + kategorija.getNaziv() + "\"}," +
+                "\"idIkonice\": {\"integerValue\": \"" + kategorija.getId() + "\"}}}";
+
+        try (OutputStream os = connection.getOutputStream()) {
+            byte[] input = dokument.getBytes(StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        }
+
+        getResponse();
+    }
+
+    private void azurirajKvizove(Kviz kviz) throws Exception {
+        String connectionUrl = databaseUrl + "/Kvizovi/" + kviz.firebaseId() + "?access_token=";
+
+        url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
+        openConnection(QUERY_TYPE.PATCH);
+
+        StringBuilder dokument = new StringBuilder("{\"fields\": { \"naziv\": {\"stringValue\": \"" + kviz.getNaziv() + "\"}," +
+                "\"idKategorije\": {\"stringValue\": \"" + kviz.getKategorija().firebaseId() + "\"}," +
+                "\"pitanja\": {\"arrayValue\": { \"values\": [");
+
+        ArrayList<Pitanje> pitanja = kviz.getPitanja();
+        for (int i = 0; i < pitanja.size(); i++) {
+            dokument.append("{\"stringValue\": \"");
+            dokument.append(pitanja.get(i).firebaseId());
+            dokument.append("\"}");
+            if (i < pitanja.size() - 1)
+                dokument.append(",");
+        }
+
+        dokument.append("]}}}}");
+
+        try (OutputStream os = connection.getOutputStream()) {
+            byte[] input = dokument.toString().getBytes(StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        }
+
+        getResponse();
+    }
+
+    private void azurirajPitanja(Pitanje pitanje) throws Exception {
+        String connectionUrl = databaseUrl + "/Pitanja/" + pitanje.firebaseId() + "?access_token=";
+
+        url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
+        openConnection(QUERY_TYPE.PATCH);
+
+        StringBuilder dokument = new StringBuilder("{\"fields\": { \"naziv\": {\"stringValue\": \"" + pitanje.getNaziv() + "\"}," +
+                "\"odgovori\": {\"arrayValue\": {\"values\": [");
+
+        int indexTacnog = 0;
+
+        ArrayList<String> odgovori = pitanje.getOdgovori();
+        for (int i = 0; i < odgovori.size(); i++) {
+            dokument.append("{\"stringValue\": \"");
+            dokument.append(odgovori.get(i));
+            dokument.append("\"}");
+            if (i < odgovori.size() - 1)
+                dokument.append(",");
+            if (odgovori.get(i).equals(pitanje.getTacan()))
+                indexTacnog = i;
+        }
+
+        dokument.append("]}}, \"indexTacnog\": {\"integerValue\": \"");
+        dokument.append(indexTacnog);
+        dokument.append("\"}}}");
+
+        try (OutputStream os = connection.getOutputStream()) {
+            byte[] input = dokument.toString().getBytes(StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        }
+
+        getResponse();
+    }
 }
+

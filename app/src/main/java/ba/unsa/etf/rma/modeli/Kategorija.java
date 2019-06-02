@@ -38,15 +38,14 @@ public class Kategorija implements Parcelable {
         this.id = id;
     }
 
-    private void generisiFirebaseId(){
-        firebaseId = "CAT[";
-        if(naziv.equals("Svi") && id.equals("-1"))
-            firebaseId += "-ALL-]";
+    private void generisiFirebaseId() {
+        if (naziv.equals("Svi") && id.equals("-1"))
+            firebaseId += "CAT[-ALL-]";
         else
-            firebaseId += UUID.randomUUID().toString().toUpperCase() + "]";
+            firebaseId = "CAT[" + UUID.randomUUID().toString().toUpperCase() + "]";
     }
 
-    public String firebaseId(){
+    public String firebaseId() {
         return firebaseId;
     }
 
@@ -69,6 +68,12 @@ public class Kategorija implements Parcelable {
         return this.naziv.equals(((Kategorija) obj).naziv) && this.id.equals(((Kategorija) obj).id);
     }
 
+    public Kategorija(Parcel in) {
+        this.naziv = in.readString();
+        this.id = in.readString();
+        this.firebaseId = in.readString();
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -79,12 +84,6 @@ public class Kategorija implements Parcelable {
         dest.writeString(this.naziv);
         dest.writeString(this.id);
         dest.writeString(this.firebaseId);
-    }
-
-    private Kategorija(Parcel in) {
-        this.naziv = in.readString();
-        this.id = in.readString();
-        this.firebaseId = in.readString();
     }
 
     public static final Parcelable.Creator<Kategorija> CREATOR = new Parcelable.Creator<Kategorija>() {

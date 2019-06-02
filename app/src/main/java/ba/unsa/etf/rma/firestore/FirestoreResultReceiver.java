@@ -6,10 +6,6 @@ import android.os.ResultReceiver;
 
 public class FirestoreResultReceiver extends ResultReceiver {
 
-    public interface Receiver {
-        void onReceiveResult(int resultCode, Bundle resultData);
-    }
-
     private Receiver receiver;
 
     public FirestoreResultReceiver(Handler handler) {
@@ -22,7 +18,11 @@ public class FirestoreResultReceiver extends ResultReceiver {
 
     @Override
     protected void onReceiveResult(int resultCode, Bundle resultData) {
-        if(receiver != null)
+        if (receiver != null)
             receiver.onReceiveResult(resultCode, resultData);
+    }
+
+    public interface Receiver {
+        void onReceiveResult(int resultCode, Bundle resultData);
     }
 }

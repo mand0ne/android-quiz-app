@@ -16,8 +16,8 @@ import java.util.Objects;
 
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.customKlase.CustomAdapter;
-import ba.unsa.etf.rma.modeli.Kategorija;
 import ba.unsa.etf.rma.customKlase.KvizoviViewModel;
+import ba.unsa.etf.rma.modeli.Kategorija;
 
 public class ListaFrag extends Fragment {
 
@@ -31,13 +31,14 @@ public class ListaFrag extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        kategorije = new ArrayList<>(getArguments().<Kategorija>getParcelableArrayList("kategorije"));
+
+        assert getArguments() != null;
+        kategorije = new ArrayList<>(Objects.requireNonNull(getArguments().<Kategorija>getParcelableArrayList("kategorije")));
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_lista, container, false);
     }
 

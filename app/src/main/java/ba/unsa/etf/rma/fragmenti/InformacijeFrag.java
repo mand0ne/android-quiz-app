@@ -1,5 +1,6 @@
 package ba.unsa.etf.rma.fragmenti;
 
+import android.annotation.SuppressLint;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
@@ -12,29 +13,30 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
 
 import ba.unsa.etf.rma.R;
-import ba.unsa.etf.rma.modeli.Kviz;
 import ba.unsa.etf.rma.customKlase.IgraViewModel;
+import ba.unsa.etf.rma.modeli.Kviz;
 
 public class InformacijeFrag extends Fragment {
 
+    private TextView infBrojTacnihPitanja;
+    private TextView infBrojPreostalihPitanja, infProcenatTacni;
+    private Button btnKraj;
     private IgraViewModel model;
+
     private Kviz trenutniKviz;
     private int brojTacnihPitanja;
     private int brojPreostalihPitanja;
     private double procenatTacnih;
-    private TextView infNazivKviza, infBrojTacnihPitanja;
-    private TextView infBrojPreostalihPitanja, infProcenatTacni;
-    private Button btnKraj;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         assert getArguments() != null;
         trenutniKviz = (Kviz) getArguments().get("kviz");
         azurirajBrojPreostalih(false);
@@ -45,7 +47,6 @@ public class InformacijeFrag extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_informacije, container, false);
     }
 
@@ -53,13 +54,12 @@ public class InformacijeFrag extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        infNazivKviza = view.findViewById(R.id.infNazivKviza);
+        ((TextView) view.findViewById(R.id.infNazivKviza)).setText(trenutniKviz.getNaziv());
         infBrojTacnihPitanja = view.findViewById(R.id.infBrojTacnihPitanja);
         infBrojPreostalihPitanja = view.findViewById(R.id.infBrojPreostalihPitanja);
         infProcenatTacni = view.findViewById(R.id.infProcenatTacni);
         btnKraj = view.findViewById(R.id.btnKraj);
-        infNazivKviza.setText(trenutniKviz.getNaziv());
-        azuriraj();
+        azurirajSkor();
     }
 
     @Override
@@ -78,7 +78,7 @@ public class InformacijeFrag extends Fragment {
                     model.setSkor(procenatTacnih);
                     azurirajBrojPreostalih(true);
 
-                    azuriraj();
+                    azurirajSkor();
                 }
             });
 
@@ -102,9 +102,11 @@ public class InformacijeFrag extends Fragment {
             brojPreostalihPitanja = 0;
     }
 
-    private void azuriraj() {
+    @SuppressLint("SetTextI18n")
+    private void azurirajSkor() {
         infBrojPreostalihPitanja.setText(String.valueOf(brojPreostalihPitanja));
         infBrojTacnihPitanja.setText(String.valueOf(brojTacnihPitanja));
+
         BigDecimal bd = new BigDecimal(procenatTacnih * 100.0);
         bd = bd.setScale(2, RoundingMode.HALF_UP);
         infProcenatTacni.setText(bd.doubleValue() + " %");

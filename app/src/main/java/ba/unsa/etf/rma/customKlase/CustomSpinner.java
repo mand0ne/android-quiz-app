@@ -28,7 +28,8 @@ public class CustomSpinner extends android.support.v7.widget.AppCompatSpinner {
         if (sameSelected)
             try {
                 Objects.requireNonNull(getOnItemSelectedListener()).onItemSelected(this, getSelectedView(), position, getSelectedItemId());
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
     }
 
     @Override
@@ -38,6 +39,7 @@ public class CustomSpinner extends android.support.v7.widget.AppCompatSpinner {
         if (sameSelected)
             try {
                 Objects.requireNonNull(getOnItemSelectedListener()).onItemSelected(this, getSelectedView(), position, getSelectedItemId());
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
     }
 }

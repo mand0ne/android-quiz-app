@@ -19,8 +19,7 @@
 
         <activity
             android:name=".aktivnosti.IgrajKvizAkt"
-            android:configChanges="orientation|screenSize">
-        </activity>
+            android:configChanges="orientation|screenSize"></activity>
 
         <activity
             android:name=".aktivnosti.DodajKategorijuAkt"

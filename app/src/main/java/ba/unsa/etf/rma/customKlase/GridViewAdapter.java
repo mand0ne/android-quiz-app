@@ -36,7 +36,6 @@ public class GridViewAdapter extends ArrayAdapter<Kviz> {
         TextView nazivKviza = gridItem.findViewById(R.id.nazivKviza);
         TextView brojPitanjaKviza = gridItem.findViewById(R.id.brojPitanjaKviza);
 
-
         final Kviz trenutniKviz = getItem(position);
 
         assert trenutniKviz != null;

@@ -1,13 +1,13 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Fill the background with a solid color -->
-    <item android:drawable="@color/gray"/>
+    <item android:drawable="@color/gray" />
 
     <!-- Place your bitmap in the center -->
     <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/ic_launcher2"/>
+            android:src="@mipmap/ic_launcher2" />
     </item>
 
 </layer-list>

@@ -5,11 +5,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -37,13 +37,14 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
     private EditText etOdgovor;
     private Button btnDodajTacan;
 
-    private ArrayAdapter<String> adapter;
+    private ArrayAdapter<String> adapterOdgovori;
 
     private ArrayList<String> odgovori = new ArrayList<>();
-    private Pitanje novoPitanje = null;
+    private Pitanje novoPitanje;
 
-    private String TOKEN = "";
-    public FirestoreResultReceiver receiver;
+    private FirestoreResultReceiver receiver;
+    // Firestore access token
+    private String TOKEN;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,10 +65,10 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
         Button btnDodajOdgovor = findViewById(R.id.btnDodajOdgovor);
         Button btnDodajPitanje = findViewById(R.id.btnDodajPitanje);
 
-        Intent intent = getIntent();
+        final Intent intent = getIntent();
         TOKEN = intent.getStringExtra("token");
 
-        adapter = (new ArrayAdapter<String>(this, R.layout.element_odgovora, R.id.odgovor, odgovori) {
+        adapterOdgovori = (new ArrayAdapter<String>(this, R.layout.element_odgovora, R.id.odgovor, odgovori) {
             @SuppressWarnings("NullableProblems")
             @Override
             public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
@@ -81,7 +82,8 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
                 return row;
             }
         });
-        lvOdgovori.setAdapter(adapter);
+
+        lvOdgovori.setAdapter(adapterOdgovori);
 
         novoPitanje = new Pitanje(null, null, null);
 
@@ -94,7 +96,7 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
                         novoPitanje.dodajOdgovor(odgovor);
 
                         odgovori.add(odgovor);
-                        adapter.notifyDataSetChanged();
+                        adapterOdgovori.notifyDataSetChanged();
                         etOdgovor.setText("");
                     } else
                         Toast.makeText(DodajPitanjeAkt.this, "Odgovor već postoji!", Toast.LENGTH_LONG).show();
@@ -116,7 +118,7 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
                         btnDodajTacan.getBackground().setColorFilter(0xFFB79D9D, PorterDuff.Mode.MULTIPLY);
 
                         odgovori.add(odgovor);
-                        adapter.notifyDataSetChanged();
+                        adapterOdgovori.notifyDataSetChanged();
                         etOdgovor.setText("");
                     } else
                         Toast.makeText(DodajPitanjeAkt.this, "Odgovor već postoji!", Toast.LENGTH_LONG).show();
@@ -137,27 +139,21 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
                 }
 
                 novoPitanje.getOdgovori().remove(obrisani);
-                adapter.notifyDataSetChanged();
+                adapterOdgovori.notifyDataSetChanged();
             }
         });
 
         btnDodajPitanje.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (validnoPitanje())
+                if (etNaziv.getText().length() == 0)
+                    etNaziv.setError("Unesite ime pitanja!");
+                else if (novoPitanje.getTacan() == null)
+                    etOdgovor.setError("Potrebno je unijeti bar jedan, tačan odgovor!");
+                else
                     firestoreRequest();
-                else {
-                    if (novoPitanje.getTacan() == null)
-                        etOdgovor.setError("Potrebno je unijeti tačan odgovor!");
-                    if (etNaziv.getText().length() == 0)
-                        etNaziv.setError("Unesite ime pitanja!");
-                }
             }
         });
-    }
-
-    boolean validnoPitanje() {
-        return etNaziv.getText().length() != 0 && novoPitanje.getTacan() != null;
     }
 
     private void firestoreRequest() {
@@ -170,7 +166,7 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
         startService(intent);
     }
 
-    private void patchQuestionDocumentOnFirebase(Pitanje novoPitanje) {
+    private void azurirajPitanjeDokumentFirestore(Pitanje novoPitanje) {
         final Intent intent = new Intent(Intent.ACTION_SEND, null, context, FirestoreIntentService.class);
         intent.putExtra("receiver", receiver);
         intent.putExtra("token", TOKEN);
@@ -179,19 +175,18 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
         startService(intent);
     }
 
-
     private void dodajPitanje(String nazivPitanja) {
         novoPitanje.setNaziv(nazivPitanja);
         novoPitanje.setTekstPitanja(etNaziv.getText().toString());
-        patchQuestionDocumentOnFirebase(novoPitanje);
+        azurirajPitanjeDokumentFirestore(novoPitanje);
 
-        Intent intent = new Intent();
+        final Intent intent = new Intent();
         intent.putExtra("novoPitanje", novoPitanje);
         setResult(RESULT_OK, intent);
         finish();
     }
 
-    private void throwAlert(String naziv) {
+    private void izbaciAlert(String naziv) {
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
         alertDialog.setNeutralButton("U redu", null);
         alertDialog.setMessage("Pitanje sa nazivom: \"" + naziv + "\" već postoji!");
@@ -203,7 +198,7 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
     public void onReceiveResult(int resultCode, Bundle resultData) {
         if (resultCode == FirestoreIntentService.VALIDNO_PITANJE) {
             if (resultData.getBoolean("postojiPitanje"))
-                throwAlert(resultData.getString("nazivPitanja"));
+                izbaciAlert(resultData.getString("nazivPitanja"));
             else
                 dodajPitanje(resultData.getString("nazivPitanja"));
         }

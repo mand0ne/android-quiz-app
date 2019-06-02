@@ -3,7 +3,6 @@ package ba.unsa.etf.rma.customKlase;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -78,20 +77,16 @@ public class CustomAdapter extends ArrayAdapter<Object> {
 
             ((TextView) listItem.findViewById(R.id.naziv)).setText(trenutniKviz.getNaziv());
         } else if (list.get(position) instanceof Pitanje) {
-            Pitanje pitanje = (Pitanje) list.get(position);
-
             ((ImageView) listItem.findViewById(R.id.ikona)).setImageResource(R.drawable.questionico);
-            ((TextView) listItem.findViewById(R.id.naziv)).setText(pitanje.getNaziv());
+            ((TextView) listItem.findViewById(R.id.naziv)).setText(((Pitanje) list.get(position)).getNaziv());
         } else if (list.get(position) instanceof Kategorija) {
             final Kategorija kategorija = (Kategorija) list.get(position);
-
             final ImageView image = listItem.findViewById(R.id.ikona);
             final IconHelper iconHelper = IconHelper.getInstance(context);
 
             iconHelper.addLoadCallback(new IconHelper.LoadCallback() {
                 @Override
                 public void onDataLoaded() {
-                    Log.i("K A T E G O R I J A", kategorija.getId());
                     switch (kategorija.getId()) {
                         case "-100":
                             image.setImageResource(R.drawable.addico);
@@ -124,5 +119,4 @@ public class CustomAdapter extends ArrayAdapter<Object> {
 
         return fview;
     }
-
 }

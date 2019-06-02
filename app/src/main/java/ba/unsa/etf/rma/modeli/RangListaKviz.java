@@ -2,33 +2,23 @@ package ba.unsa.etf.rma.modeli;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Pair;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class RangListaKviz implements Parcelable {
-
     private String nazivKviza;
     private String kvizFirebaseId;
-    private ArrayList<Pair<String, Double>> lista = new ArrayList<>();
+    private ArrayList<IgraPair> lista = new ArrayList<>();
 
     public RangListaKviz(String nazivKviza, String kvizFirebaseId) {
         this.nazivKviza = nazivKviza;
         this.kvizFirebaseId = kvizFirebaseId;
     }
 
-    public RangListaKviz(String nazivKviza, String kvizFirebaseId, ArrayList<Pair<String, Double>> lista) {
+    public RangListaKviz(String nazivKviza, String kvizFirebaseId, ArrayList<IgraPair> lista) {
         this.nazivKviza = nazivKviza;
         this.kvizFirebaseId = kvizFirebaseId;
         this.lista = lista;
-    }
-
-    public String firebaseId(){
-        return "RANK[" + kvizFirebaseId + "]";
     }
 
     public String getNazivKviza() {
@@ -39,16 +29,26 @@ public class RangListaKviz implements Parcelable {
         this.nazivKviza = nazivKviza;
     }
 
-    public void setKvizFirebaseId(String firebaseId){
+    public void setKvizFirebaseId(String firebaseId) {
         this.kvizFirebaseId = firebaseId;
     }
 
-    public ArrayList<Pair<String, Double>> getLista() {
+    public String firebaseId() {
+        return "RANK[" + kvizFirebaseId + "]";
+    }
+
+    public ArrayList<IgraPair> getLista() {
         return lista;
     }
 
-    public void setLista(ArrayList<Pair<String, Double>> lista) {
+    public void setLista(ArrayList<IgraPair> lista) {
         this.lista = lista;
+    }
+
+    public RangListaKviz(Parcel in) {
+        this.nazivKviza = in.readString();
+        this.kvizFirebaseId = in.readString();
+        this.lista = in.createTypedArrayList(IgraPair.CREATOR);
     }
 
     @Override
@@ -60,13 +60,7 @@ public class RangListaKviz implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.nazivKviza);
         dest.writeString(this.kvizFirebaseId);
-        dest.writeSerializable(this.lista);
-    }
-
-    protected RangListaKviz(Parcel in) {
-        this.nazivKviza = in.readString();
-        this.kvizFirebaseId = in.readString();
-        this.lista = (ArrayList<Pair<String, Double>>) in.readSerializable();
+        dest.writeTypedList(this.lista);
     }
 
     public static final Parcelable.Creator<RangListaKviz> CREATOR = new Parcelable.Creator<RangListaKviz>() {

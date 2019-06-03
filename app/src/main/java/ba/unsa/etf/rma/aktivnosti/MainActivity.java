@@ -72,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void pokreniAplikaciju() {
-        Toast.makeText(context, "Konektovani ste!", Toast.LENGTH_LONG).show();
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -161,10 +160,13 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Boolean connected) {
             MainActivity mainActivity = (MainActivity) activityWeakReference.get();
-            if (connected)
+            if (connected) {
+                Toast.makeText(mainActivity.context, "Konektovani ste!", Toast.LENGTH_SHORT).show();
                 new getAccessToken(mainActivity).execute();
-            else
+            } else {
+                Toast.makeText(mainActivity.context, "Niste konektovani!", Toast.LENGTH_SHORT).show();
                 mainActivity.showDialog();
+            }
         }
     }
 }

@@ -74,4 +74,8 @@ public class ListaFrag extends Fragment {
         kategorije.addAll(noveKategorije);
         kategorijaAdapter.notifyDataSetChanged();
     }
+
+    public void refreshujSpinner() {
+        listaKategorija.setSelection(0);
+    }
 }

@@ -5,6 +5,8 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,12 +19,8 @@ import android.widget.Toast;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.common.collect.Lists;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
 
 import ba.unsa.etf.rma.R;
 
@@ -43,14 +41,27 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        new checkIfOnline(MainActivity.this).execute();
+        promptConnection();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (resultCode == RESULT_OK && requestCode == 1337)
-            new checkIfOnline(MainActivity.this).execute();
+            promptConnection();
+    }
 
+    private void promptConnection(){
+        if (isNetworkAvailable())
+            new getAccessToken(this).execute();
+        else
+            showDialog();
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     private void showDialog() {
@@ -80,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(context, KvizoviAkt.class);
                 intent.putExtra("token", TOKEN);
                 startActivity(intent);
+                finish();
 
             }
         }, 1500);
@@ -121,48 +133,6 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Void aVoid) {
             MainActivity mainActivity = (MainActivity) activityWeakReference.get();
             mainActivity.pokreniAplikaciju();
-        }
-    }
-
-    private static class checkIfOnline extends AsyncTask<String, Void, Boolean> {
-        private WeakReference<Activity> activityWeakReference;
-        private String TAG = getClass().getSimpleName();
-
-        checkIfOnline(Activity activityWeakReference) {
-            this.activityWeakReference = new WeakReference<>(activityWeakReference);
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            MainActivity mainActivity = (MainActivity) activityWeakReference.get();
-            if (mainActivity == null || mainActivity.isFinishing())
-                this.cancel(true);
-        }
-
-        protected Boolean doInBackground(String... params) {
-            try {
-                int timeoutMs = 1500;
-                Socket sock = new Socket();
-                SocketAddress sockaddr = new InetSocketAddress("8.8.8.8", 53);
-
-                sock.connect(sockaddr, timeoutMs);
-                sock.close();
-
-                return true;
-            } catch (IOException e) {
-                return false;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Boolean connected) {
-            MainActivity mainActivity = (MainActivity) activityWeakReference.get();
-            if (connected)
-                new getAccessToken(mainActivity).execute();
-            else
-                mainActivity.showDialog();
         }
     }
 }

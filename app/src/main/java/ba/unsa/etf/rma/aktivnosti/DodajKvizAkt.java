@@ -64,7 +64,7 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
     private ArrayList<Pitanje> mogucaPitanja = new ArrayList<>();
 
     private Kviz trenutniKviz;
-    private String originalnoImeTrenutnogKviza;
+    private String originalnoImeTrenutnogKviza = "";
     private Kategorija kategorijaKviza = new Kategorija("Svi", "-1");
     private boolean dodavanjeKviza = true;
 
@@ -97,6 +97,7 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
             trenutniKviz = new Kviz(null, null);
 
         TOKEN = intent.getStringExtra("token");
+        originalnoImeTrenutnogKviza = trenutniKviz.getNaziv();
 
         spinnerAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, kategorije);
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -116,7 +117,6 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
 
         if (intent.getIntExtra("requestCode", 30) == PROMIJENI_KVIZ) {
             dodavanjeKviza = false;
-            originalnoImeTrenutnogKviza = trenutniKviz.getNaziv();
             spinnerKategorije.setSelection(spinnerAdapter.getPosition(trenutniKviz.getKategorija()));
             editTextNaziv.setText(trenutniKviz.getNaziv());
         }
@@ -336,7 +336,8 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
                 String nazivKategorijeImport = resultData.getString("nazivKategorijeImport");
                 ArrayList<Pitanje> pitanja = resultData.getParcelableArrayList("pitanja");
 
-                int spinnerIndex = 0;
+                int spinnerIndex;
+                assert nazivKategorijeImport != null;
                 if (nazivKategorijeImport.contains("null-index:"))
                     spinnerIndex = Integer.parseInt(nazivKategorijeImport.substring(11));
                 else {

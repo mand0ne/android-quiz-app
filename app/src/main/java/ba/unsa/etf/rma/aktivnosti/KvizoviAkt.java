@@ -254,6 +254,11 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
             }
             ArrayList<Kategorija> noveKategorije = data.getParcelableArrayListExtra("kategorije");
             azurirajKategorije(noveKategorije, dpwidth < 550);
+
+            if(dpwidth < 550)
+                spinnerKategorije.setSelection(0);
+            else
+                listaFrag.refreshujSpinner();
         }
     }
 

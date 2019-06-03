@@ -77,7 +77,7 @@ public class DetailFrag extends Fragment {
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
                 if (kliknutiKviz.getNaziv().equals("Dodaj kviz"))
-                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).dodajKvizAktivnost(kliknutiKviz);
+                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).dodajKvizAktivnost(null);
                 else
                     ((KvizoviAkt) Objects.requireNonNull(getActivity())).dodajKvizAktivnost(kliknutiKviz);
 
@@ -92,7 +92,7 @@ public class DetailFrag extends Fragment {
                 if (!(kliknutiKviz.getNaziv().equals("Dodaj kviz")))
                     ((KvizoviAkt) Objects.requireNonNull(getActivity())).igrajKvizAktivnost(kliknutiKviz);
                 else
-                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).dodajKvizAktivnost(kliknutiKviz);
+                    ((KvizoviAkt) Objects.requireNonNull(getActivity())).dodajKvizAktivnost(null);
             }
         });
     }

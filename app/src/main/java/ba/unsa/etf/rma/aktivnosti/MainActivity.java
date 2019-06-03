@@ -5,8 +5,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,8 +17,12 @@ import android.widget.Toast;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.common.collect.Lists;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 
 import ba.unsa.etf.rma.R;
 
@@ -41,27 +43,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        promptConnection();
+        new checkIfOnline(this).execute();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (resultCode == RESULT_OK && requestCode == 1337)
-            promptConnection();
-    }
-
-    private void promptConnection(){
-        if (isNetworkAvailable())
-            new getAccessToken(this).execute();
-        else
-            showDialog();
-    }
-
-    private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager
-                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+            new checkIfOnline(this).execute();
     }
 
     private void showDialog() {
@@ -75,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .setPositiveButton("Quit", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        ((KvizoviAkt) context).finishAndRemoveTask();
+                        ((MainActivity) context).finishAndRemoveTask();
                         System.exit(0);
                     }
                 });
@@ -97,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
         }, 1500);
     }
 
-    private static class getAccessToken extends AsyncTask<String, Void, Void> {
+    private static class getAccessToken extends AsyncTask<String, Void, Boolean> {
         private WeakReference<Activity> activityWeakReference;
         private String TAG = getClass().getSimpleName();
 
@@ -114,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
                 this.cancel(true);
         }
 
-        protected Void doInBackground(String... params) {
+        protected Boolean doInBackground(String... params) {
             try {
                 MainActivity mainActivity = (MainActivity) activityWeakReference.get();
                 InputStream is = mainActivity.context.getResources().openRawResource(R.raw.secret);
@@ -123,16 +111,60 @@ public class MainActivity extends AppCompatActivity {
                 credentials.refreshToken();
                 mainActivity.TOKEN = credentials.getAccessToken();
                 Log.d(TAG, "TOKEN: " + mainActivity.TOKEN);
+                return true;
             } catch (Exception e) {
                 Log.d(TAG, "doInBackground: " + e.getMessage());
+                return false;
             }
-            return null;
         }
 
         @Override
-        protected void onPostExecute(Void aVoid) {
+        protected void onPostExecute(Boolean okay) {
             MainActivity mainActivity = (MainActivity) activityWeakReference.get();
-            mainActivity.pokreniAplikaciju();
+            if (okay)
+                mainActivity.pokreniAplikaciju();
+            else
+                mainActivity.showDialog();
+        }
+    }
+
+    private static class checkIfOnline extends AsyncTask<String, Void, Boolean> {
+        private WeakReference<Activity> activityWeakReference;
+        private String TAG = getClass().getSimpleName();
+
+        checkIfOnline(Activity activityWeakReference) {
+            this.activityWeakReference = new WeakReference<>(activityWeakReference);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            MainActivity mainActivity = (MainActivity) activityWeakReference.get();
+            if (mainActivity == null || mainActivity.isFinishing())
+                this.cancel(true);
+        }
+
+        protected Boolean doInBackground(String... params) {
+            try {
+                int timeoutMs = 1500;
+                Socket sock = new Socket();
+                SocketAddress sockaddr = new InetSocketAddress("8.8.8.8", 53);
+                sock.connect(sockaddr, timeoutMs);
+                sock.close();
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean connected) {
+            MainActivity mainActivity = (MainActivity) activityWeakReference.get();
+            if (connected)
+                new getAccessToken(mainActivity).execute();
+            else
+                mainActivity.showDialog();
         }
     }
 }

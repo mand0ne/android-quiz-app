@@ -26,7 +26,7 @@ public class RangLista extends Fragment {
         super.onCreate(savedInstanceState);
 
         assert getArguments() != null;
-        rangPairs = getArguments().getParcelable("rangPair");
+        rangPairs = getArguments().getParcelableArrayList("rangPair");
     }
 
     @Override

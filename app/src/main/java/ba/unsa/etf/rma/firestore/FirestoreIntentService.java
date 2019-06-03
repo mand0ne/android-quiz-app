@@ -3,6 +3,7 @@ package ba.unsa.etf.rma.firestore;
 import android.app.IntentService;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.os.ResultReceiver;
 import android.support.annotation.Nullable;
 
@@ -25,12 +26,12 @@ import ba.unsa.etf.rma.modeli.Pitanje;
 import ba.unsa.etf.rma.modeli.RangListaKviz;
 
 public class FirestoreIntentService extends IntentService {
-    public enum REQUEST_TYPE {
+    public enum TIP_ZAHTJEVA {
         GET("GET"), POST("POST"), PATCH("PATCH");
 
         private final String text;
 
-        REQUEST_TYPE(final String text) {
+        TIP_ZAHTJEVA(final String text) {
             this.text = text;
         }
 
@@ -47,6 +48,7 @@ public class FirestoreIntentService extends IntentService {
     public static final int VALIDNA_KATEGORIJA = 200;
     public static final int VALIDAN_KVIZ = 201;
     public static final int VALIDNO_PITANJE = 202;
+    public static final int VALIDAN_IMPORT = 210;
 
     public static final int AZURIRAJ_KATEGORIJE = 300;
     public static final int AZURIRAJ_KVIZOVE = 301;
@@ -143,6 +145,29 @@ public class FirestoreIntentService extends IntentService {
                     e.printStackTrace();
                 }
                 break;
+            case VALIDAN_IMPORT:
+                try{
+                    boolean validan = true;
+                    String nazivKvizaImport = intent.getStringExtra("nazivKvizaImport");
+                    String nazivKategorijeImport = intent.getStringExtra("nazivKategorijeImport");
+
+                    if(!nazivKategorijeImport.contains("null-index:"))
+                        validan = validan && !postojiKategorija(nazivKategorijeImport);
+                    validan = validan && !postojiKviz(nazivKvizaImport);
+                    ArrayList<Pitanje> pitanjaImport = intent.getParcelableArrayListExtra("pitanjaImport");
+                    for(Pitanje pitanje : pitanjaImport)
+                        validan = validan && !postojiPitanje(pitanje.getNaziv());
+
+                    if(validan){
+                        bundle.putString("nazivKvizaImport", nazivKvizaImport);
+                        bundle.putString("nazivKategorijeImport", nazivKategorijeImport);
+                        bundle.putParcelableArrayList("pitanja", pitanjaImport);
+                    }
+                    bundle.putBoolean("validanImport", validan);
+                    resultReceiver.send(VALIDAN_IMPORT, bundle);
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
             case AZURIRAJ_KATEGORIJE:
                 try {
                     azurirajKategorije((Kategorija) intent.getParcelableExtra("kategorija"));
@@ -177,10 +202,10 @@ public class FirestoreIntentService extends IntentService {
 
     }
 
-    private void openConnection(REQUEST_TYPE query) throws Exception {
+    private void uspostaviVezu(TIP_ZAHTJEVA query) throws Exception {
         connection = (HttpURLConnection) url.openConnection();
 
-        if (query == REQUEST_TYPE.POST || query == REQUEST_TYPE.PATCH)
+        if (query == TIP_ZAHTJEVA.POST || query == TIP_ZAHTJEVA.PATCH)
             connection.setDoOutput(true);
 
         connection.setRequestMethod(query.toString());
@@ -188,7 +213,7 @@ public class FirestoreIntentService extends IntentService {
         connection.setRequestProperty("Accept", "application/json");
     }
 
-    private String getResponse() throws Exception {
+    private String dajOdgovorServera() throws Exception {
         String inputLine;
 
         if (connection.getResponseCode() == 404)
@@ -212,30 +237,30 @@ public class FirestoreIntentService extends IntentService {
     private ArrayList<Kategorija> dohvatiKategorije() throws Exception {
         String connectionUrl = databaseUrl + "/Kategorije?fields=documents(fields%2Cname)" + "&access_token=";
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(REQUEST_TYPE.GET);
+        uspostaviVezu(TIP_ZAHTJEVA.GET);
 
         FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser();
-        String listaKategorija = getResponse();
+        String listaKategorija = dajOdgovorServera();
         return firestoreJsonParser.parsirajKategorije(listaKategorija);
     }
 
     private ArrayList<Pitanje> dohvatiPitanja() throws Exception {
         String connectionUrl = databaseUrl + "/Pitanja?fields=documents(fields%2Cname)" + "&access_token=";
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(REQUEST_TYPE.GET);
+        uspostaviVezu(TIP_ZAHTJEVA.GET);
 
         FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser();
-        String listaPitanja = getResponse();
+        String listaPitanja = dajOdgovorServera();
         return firestoreJsonParser.parsirajPitanja(listaPitanja);
     }
 
     private ArrayList<Kviz> dohvatiKvizove(ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja) throws Exception {
         String connectionUrl = databaseUrl + "/Kvizovi?fields=documents(fields%2Cname)" + "&access_token=";
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(REQUEST_TYPE.GET);
+        uspostaviVezu(TIP_ZAHTJEVA.GET);
 
         FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser();
-        String listaKvizova = getResponse();
+        String listaKvizova = dajOdgovorServera();
         return firestoreJsonParser.parsirajKvizove(listaKvizova, kategorije, pitanja);
     }
 
@@ -274,7 +299,6 @@ public class FirestoreIntentService extends IntentService {
                 "    }\n" +
                 "   }\n" +
                 "  },\n" +
-                "  \"limit\": 1000\n" +
                 " }\n" +
                 "}\n" +
                 "\n";
@@ -282,7 +306,7 @@ public class FirestoreIntentService extends IntentService {
         String connectionUrl = databaseUrl + ":runQuery?fields=document(fields%2Cname)&access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(REQUEST_TYPE.POST);
+        uspostaviVezu(TIP_ZAHTJEVA.POST);
 
         try (OutputStream os = connection.getOutputStream()) {
             byte[] input = structuredQuery.getBytes(StandardCharsets.UTF_8);
@@ -290,7 +314,7 @@ public class FirestoreIntentService extends IntentService {
         }
 
         FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser(true);
-        String listaKvizova = getResponse();
+        String listaKvizova = dajOdgovorServera();
         listaKvizova = "{\n\"documents\":" + listaKvizova + "}";
         return firestoreJsonParser.parsirajKvizove(listaKvizova, dohvatiKategorije(), dohvatiPitanja());
     }
@@ -299,11 +323,11 @@ public class FirestoreIntentService extends IntentService {
         String connectionUrl = databaseUrl + "/Rangliste/RANK[" + kvizFirebaseId + "]?fields=fields%2Cname&access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(REQUEST_TYPE.GET);
+        uspostaviVezu(TIP_ZAHTJEVA.GET);
 
         RangListaKviz rangListaKviz;
         try {
-            String rangListaJson = getResponse();
+            String rangListaJson = dajOdgovorServera();
             FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser(false);
             rangListaKviz = firestoreJsonParser.parsirajRangListu(rangListaJson);
             rangListaKviz.setNazivKviza(nazivKviza);
@@ -347,13 +371,13 @@ public class FirestoreIntentService extends IntentService {
         String connectionUrl = databaseUrl + ":runQuery?fields=document(fields%2Cname)&access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(REQUEST_TYPE.POST);
+        uspostaviVezu(TIP_ZAHTJEVA.POST);
         try (OutputStream os = connection.getOutputStream()) {
             byte[] input = structuredQuery.getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
         }
 
-        String kviz = getResponse();
+        String kviz = dajOdgovorServera();
 
         try {
             JSONArray jo = new JSONArray(kviz);
@@ -396,13 +420,13 @@ public class FirestoreIntentService extends IntentService {
         String connectionUrl = databaseUrl + ":runQuery?fields=document(fields%2Cname)&access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(REQUEST_TYPE.POST);
+        uspostaviVezu(TIP_ZAHTJEVA.POST);
         try (OutputStream os = connection.getOutputStream()) {
             byte[] input = structuredQuery.getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
         }
 
-        String pitanje = getResponse();
+        String pitanje = dajOdgovorServera();
 
         try {
             JSONArray jo = new JSONArray(pitanje);
@@ -445,14 +469,14 @@ public class FirestoreIntentService extends IntentService {
         String connectionUrl = databaseUrl + ":runQuery?fields=document(fields%2Cname)&access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(REQUEST_TYPE.POST);
+        uspostaviVezu(TIP_ZAHTJEVA.POST);
 
         try (OutputStream os = connection.getOutputStream()) {
             byte[] input = structuredQuery.getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
         }
 
-        String kategorija = getResponse();
+        String kategorija = dajOdgovorServera();
 
         try {
             JSONArray jo = new JSONArray(kategorija);
@@ -467,7 +491,7 @@ public class FirestoreIntentService extends IntentService {
         String connectionUrl = databaseUrl + "/Kategorije/" + kategorija.firebaseId() + "?access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(REQUEST_TYPE.PATCH);
+        uspostaviVezu(TIP_ZAHTJEVA.PATCH);
 
         String dokument = "{\"fields\": { \"naziv\": {\"stringValue\": \"" + kategorija.getNaziv() + "\"}," +
                 "\"idIkonice\": {\"integerValue\": \"" + kategorija.getId() + "\"}}}";
@@ -477,14 +501,14 @@ public class FirestoreIntentService extends IntentService {
             os.write(input, 0, input.length);
         }
 
-        getResponse();
+        dajOdgovorServera();
     }
 
     private void azurirajKvizove(Kviz kviz) throws Exception {
         String connectionUrl = databaseUrl + "/Kvizovi/" + kviz.firebaseId() + "?access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(REQUEST_TYPE.PATCH);
+        uspostaviVezu(TIP_ZAHTJEVA.PATCH);
 
         StringBuilder dokument = new StringBuilder("{\"fields\": { \"naziv\": {\"stringValue\": \"" + kviz.getNaziv() + "\"}," +
                 "\"idKategorije\": {\"stringValue\": \"" + kviz.getKategorija().firebaseId() + "\"}," +
@@ -506,14 +530,14 @@ public class FirestoreIntentService extends IntentService {
             os.write(input, 0, input.length);
         }
 
-        getResponse();
+        dajOdgovorServera();
     }
 
     private void azurirajPitanja(Pitanje pitanje) throws Exception {
         String connectionUrl = databaseUrl + "/Pitanja/" + pitanje.firebaseId() + "?access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(REQUEST_TYPE.PATCH);
+        uspostaviVezu(TIP_ZAHTJEVA.PATCH);
 
         StringBuilder dokument = new StringBuilder("{\"fields\": { \"naziv\": {\"stringValue\": \"" + pitanje.getNaziv() + "\"}," +
                 "\"odgovori\": {\"arrayValue\": {\"values\": [");
@@ -540,14 +564,14 @@ public class FirestoreIntentService extends IntentService {
             os.write(input, 0, input.length);
         }
 
-        getResponse();
+        dajOdgovorServera();
     }
 
     private void azurirajRangListu(RangListaKviz rangListaKviz) throws Exception {
         String connectionUrl = databaseUrl + "/Rangliste/" + rangListaKviz.firebaseId() + "?access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
-        openConnection(REQUEST_TYPE.PATCH);
+        uspostaviVezu(TIP_ZAHTJEVA.PATCH);
 
         StringBuilder dokument = new StringBuilder("{\n" +
                 " \"fields\": {\n" +
@@ -561,11 +585,11 @@ public class FirestoreIntentService extends IntentService {
         ArrayList<IgraPair> pairs = rangListaKviz.getLista();
 
         for (int i = 0; i < pairs.size(); i++) {
-            dokument.append("\"" + (i + 1) + "\": { \n");
+            dokument.append("\"").append(i + 1).append("\": { \n");
             dokument.append("\"mapValue\": {\n");
             dokument.append("\"fields\": {\n");
-            dokument.append("\"" + pairs.get(i).first() + "\": {\n");
-            dokument.append("\"doubleValue\": " + pairs.get(i).second() + "\n");
+            dokument.append("\"").append(pairs.get(i).first()).append("\": {\n");
+            dokument.append("\"doubleValue\": ").append(pairs.get(i).second()).append("\n");
             dokument.append("}\n}\n}\n}\n");
             if (i < pairs.size() - 1)
                 dokument.append(",");
@@ -578,7 +602,7 @@ public class FirestoreIntentService extends IntentService {
             os.write(input, 0, input.length);
         }
 
-        getResponse();
+        dajOdgovorServera();
     }
 }
 

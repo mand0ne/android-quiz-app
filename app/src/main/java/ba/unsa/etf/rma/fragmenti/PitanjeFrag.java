@@ -176,7 +176,7 @@ public class PitanjeFrag extends Fragment {
                                 ((IgrajKvizAkt) Objects.requireNonNull(getActivity()))
                                         .azurirajRangListuIPrikazi(input.getText().toString(), model.getSkor().getValue());
                             } else
-                                input.setError("Morate unijeti ime i prezime");
+                                input.setError("Morate unijeti nickname!");
                         }
                     });
                 }

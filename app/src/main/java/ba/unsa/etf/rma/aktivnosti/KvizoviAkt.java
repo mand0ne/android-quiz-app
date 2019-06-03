@@ -1,30 +1,17 @@
 package ba.unsa.etf.rma.aktivnosti;
 
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.common.collect.Lists;
-
-import java.io.InputStream;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 import ba.unsa.etf.rma.R;
@@ -78,13 +65,8 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
             TOKEN = savedInstanceState.getString("token");
         }
 
-        if (TOKEN == null) {
-            try {
-                new getAccessToken(this).execute().get();   // Da, jeste .get() ali ima smisla priznaj?
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        if (TOKEN == null)
+            TOKEN = getIntent().getStringExtra("token");
 
         start();
     }
@@ -276,6 +258,10 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
     }
 
     @Override
+    public void onBackPressed() {
+    }
+
+    @Override
     public void onReceiveResult(int resultCode, Bundle resultData) {
         if (resultCode == FILTRIRAJ_KVIZOVE) {
             ArrayList<Kategorija> noveKategorije = resultData.getParcelableArrayList("kategorije");
@@ -287,82 +273,4 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
             findViewById(R.id.loadingPanel).setVisibility(View.INVISIBLE);
         }
     }
-
-
-    public void promptConnection(final Context context) {
-        boolean wifiConnection = false;
-        boolean mobileConnection = false;
-
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo[] netInfo = connectivityManager.getAllNetworkInfo();
-        for (NetworkInfo ni : netInfo) {
-            if (ni.getTypeName().equalsIgnoreCase("WIFI"))
-                if (ni.isConnected())
-                    wifiConnection = true;
-            if (ni.getTypeName().equalsIgnoreCase("MOBILE"))
-                if (ni.isConnected())
-                    mobileConnection = true;
-        }
-
-        if (!wifiConnection && !mobileConnection)
-            showDialog(context);
-    }
-
-    private void showDialog(final Context context) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Connect to the internet or quit")
-                .setCancelable(false)
-                .setNegativeButton("Connect", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
-                    }
-                })
-                .setPositiveButton("Quit", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        ((KvizoviAkt) context).finishAndRemoveTask();
-                        System.exit(0);
-                    }
-                });
-        AlertDialog alert = builder.create();
-        alert.show();
-    }
-
-    private static class getAccessToken extends AsyncTask<String, Void, Void> {
-        private WeakReference<Activity> activityWeakReference;
-        private String TAG = getClass().getSimpleName();
-
-        getAccessToken(Activity activityWeakReference) {
-            this.activityWeakReference = new WeakReference<>(activityWeakReference);
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            KvizoviAkt kvizoviAkt = (KvizoviAkt) activityWeakReference.get();
-            if (kvizoviAkt == null || kvizoviAkt.isFinishing())
-                this.cancel(true);
-        }
-
-        protected Void doInBackground(String... params) {
-            try {
-                KvizoviAkt kvizoviAkt = (KvizoviAkt) activityWeakReference.get();
-                InputStream is = kvizoviAkt.context.getResources().openRawResource(R.raw.secret);
-                GoogleCredential credentials = GoogleCredential.fromStream(is)
-                        .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/datastore"));
-                credentials.refreshToken();
-                kvizoviAkt.TOKEN = credentials.getAccessToken();
-                Log.d(TAG, "TOKEN: " + kvizoviAkt.TOKEN);
-            } catch (Exception e) {
-                Log.d(TAG, "doInBackground: " + e.getMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-        }
-    }
-
 }

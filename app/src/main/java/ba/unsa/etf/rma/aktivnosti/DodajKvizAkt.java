@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -18,7 +19,14 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.StringTokenizer;
 
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.customKlase.CustomAdapter;
@@ -30,14 +38,17 @@ import ba.unsa.etf.rma.modeli.Kviz;
 import ba.unsa.etf.rma.modeli.Pitanje;
 
 import static ba.unsa.etf.rma.aktivnosti.KvizoviAkt.PROMIJENI_KVIZ;
+import static ba.unsa.etf.rma.firestore.FirestoreIntentService.AZURIRAJ_KATEGORIJE;
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.AZURIRAJ_KVIZOVE;
+import static ba.unsa.etf.rma.firestore.FirestoreIntentService.AZURIRAJ_PITANJA;
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.DOHVATI_PITANJA;
+import static ba.unsa.etf.rma.firestore.FirestoreIntentService.VALIDAN_IMPORT;
 
 public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultReceiver.Receiver {
 
     static final int DODAJ_PITANJE = 40;
     static final int DODAJ_KATEGORIJU = 41;
-    private static final int IMPORT_QUIZ = 42;
+    private static final int IMPORTUJ_KVIZ = 42;
 
     private Context context;
     private CustomSpinner spinnerKategorije;
@@ -293,14 +304,14 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
                     kategorijaKviza = (Kategorija) spinnerKategorije.getSelectedItem();
                 }
 
-                /*if (requestCode == IMPORT_QUIZ) {
+                if (requestCode == IMPORTUJ_KVIZ) {
                     try {
                         Uri uri = data.getData();
-                        validateImportAndAssign(loadImportIntoArray(uri));
+                        procesirajImport(ucitajImportUNiz(uri));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                }*/
+                }
             }
         }
     }
@@ -319,50 +330,88 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
 
         } else if (resultCode == DOHVATI_PITANJA)
             azurirajMogucaPitanja(resultData.<Pitanje>getParcelableArrayList("pitanja"));
+        else if (resultCode == VALIDAN_IMPORT) {
+            if (resultData.getBoolean("validanImport")) {
+                String nazivKvizaImport = resultData.getString("nazivKvizaImport");
+                String nazivKategorijeImport = resultData.getString("nazivKategorijeImport");
+                ArrayList<Pitanje> pitanja = resultData.getParcelableArrayList("pitanja");
+
+                int spinnerIndex = 0;
+                if (nazivKategorijeImport.contains("null-index:"))
+                    spinnerIndex = Integer.parseInt(nazivKategorijeImport.substring(11));
+                else {
+                    kategorijaKviza = new Kategorija(nazivKategorijeImport, "-3");
+                    azurirajKategorijaDokumentFirestore(kategorijaKviza);
+                    kategorije.add(kategorije.size() - 1, kategorijaKviza);
+                    spinnerIndex = kategorije.size() - 2;
+                }
+
+                assert pitanja != null;
+                for (Pitanje p : pitanja)
+                    azurirajPitanjeDokumentFirestore(p);
+
+                editTextNaziv.setText(nazivKvizaImport);
+                spinnerAdapter.notifyDataSetChanged();
+                spinnerKategorije.setSelection(spinnerIndex);
+
+                dodanaPitanja.clear();
+                dodanaPitanja.addAll(pitanja);
+                adapterDodanaPitanja.notifyDataSetChanged();
+                firestoreRequest(DOHVATI_PITANJA);
+
+            } else
+                izbaciAlert("Kviz/Kategorija/Pitanje već postoji!");
+        }
     }
-}
 
+    private void azurirajKategorijaDokumentFirestore(Kategorija kategorija) {
+        final Intent intent = new Intent(Intent.ACTION_SEND, null, context, FirestoreIntentService.class);
+        intent.putExtra("receiver", receiver);
+        intent.putExtra("token", TOKEN);
+        intent.putExtra("request", AZURIRAJ_KATEGORIJE);
+        intent.putExtra("kategorija", kategorija);
+        startService(intent);
+    }
 
+    void azurirajPitanjeDokumentFirestore(Pitanje novoPitanje) {
+        final Intent intent = new Intent(Intent.ACTION_SEND, null, context, FirestoreIntentService.class);
+        intent.putExtra("receiver", receiver);
+        intent.putExtra("token", TOKEN);
+        intent.putExtra("request", AZURIRAJ_PITANJA);
+        intent.putExtra("pitanje", novoPitanje);
+        startService(intent);
+    }
 
-
-
-
-
-
-
- /*
-
-    public void performFileSearch(View v) {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+    // Pozvana klikom na dugme "Importuj kviz"
+    public void importujKviz(View v) {
+        final Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("text/*");
-        startActivityForResult(intent, IMPORT_QUIZ);
+        startActivityForResult(intent, IMPORTUJ_KVIZ);
     }
 
-
-    ArrayList<String> loadImportIntoArray(Uri uri) throws IOException {
+    ArrayList<String> ucitajImportUNiz(Uri uri) throws IOException {
         InputStream inputStream = getContentResolver().openInputStream(uri);
         if (inputStream == null)
             return null;
 
-        BufferedReader bReader = new BufferedReader(new InputStreamReader(inputStream));
-
-        ArrayList<String> quizData = new ArrayList<>();
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+        ArrayList<String> kviz = new ArrayList<>();
 
         String lineInFile;
-
-        while ((lineInFile = bReader.readLine()) != null)
-            quizData.add(lineInFile);
+        while ((lineInFile = bufferedReader.readLine()) != null)
+            kviz.add(lineInFile);
 
         inputStream.close();
-        return quizData;
+        return kviz;
     }
 
 
-    private void validateImportAndAssign(ArrayList<String> importovanKviz) {
+    // Najvjerovatnije najgora funkcija ikad napisana, ali sta je tu je
+    private void procesirajImport(ArrayList<String> importovanKviz) {
 
         if (importovanKviz.isEmpty()) {
-            throwAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
+            izbaciAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
             return;
         }
 
@@ -371,7 +420,7 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
         ArrayList<Pitanje> importovanaPitanja = new ArrayList<>();
 
         if (StringUtils.countMatches(kvizPodaci, ',') != 2) {
-            throwAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
+            izbaciAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
             return;
         }
 
@@ -384,26 +433,26 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
         try {
             brojPitanjaKviza = Integer.parseInt(razdvajac.nextToken());
         } catch (Exception e) {
-            throwAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
+            izbaciAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
             return;
         }
 
         for (Kviz k : kvizovi)
             if (k.getNaziv().equals(imeKviza)) {
-                throwAlert("Kviz kojeg importujete već postoji!");
+                izbaciAlert("Kviz kojeg importujete već postoji!");
                 return;
             }
 
         if (brojPitanjaKviza != importovanKviz.size() - 1) {
-            throwAlert("Kviz kojeg imporujete ima neispravan broj pitanja!");
+            izbaciAlert("Kviz kojeg imporujete ima neispravan broj pitanja!");
             return;
         }
 
-        for (int j = 1; j < importovanKviz.size(); j++) {
-            String pitanje = importovanKviz.get(j);
+        for (int i = 1; i < importovanKviz.size(); i++) {
+            String pitanje = importovanKviz.get(i);
 
             if (pitanje.isEmpty() || StringUtils.countMatches(pitanje, ',') < 3) {
-                throwAlert("Datoteka kviza kojeg importujete nema ispravan format!");
+                izbaciAlert("Datoteka kviza kojeg importujete nema ispravan format!");
                 return;
             }
 
@@ -415,7 +464,7 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
                 brojOdgovora = Integer.parseInt(razdvajacPitanja.nextToken());
                 indexTacnogOdgovora = Integer.parseInt(razdvajacPitanja.nextToken());
             } catch (Exception e) {
-                throwAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
+                izbaciAlert("Datoteka kviza kojeg importujete nije ispravnog formata!");
                 return;
             }
 
@@ -426,7 +475,7 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
 
                 for (String o : odgovori)
                     if (odgovor.equals(o)) {
-                        throwAlert("Kviz kojeg importujete nije ispravan, postoji ponavljanje odgovora!");
+                        izbaciAlert("Kviz kojeg importujete nije ispravan, postoji ponavljanje odgovora!");
                         return;
                     }
 
@@ -434,18 +483,18 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
             }
 
             if (brojOdgovora == 0 || brojOdgovora != odgovori.size()) {
-                throwAlert("Kviz kojeg importujete ima pitanje sa neispravanim brojem odgovora!");
+                izbaciAlert("Kviz kojeg importujete ima pitanje sa neispravanim brojem odgovora!");
                 return;
             }
 
             if (indexTacnogOdgovora < 0 || indexTacnogOdgovora >= odgovori.size()) {
-                throwAlert("Kviz kojeg importujete ima pitanje neispravanim indexom tačnog odgovora!");
+                izbaciAlert("Kviz kojeg importujete ima pitanje neispravanim indexom tačnog odgovora!");
                 return;
             }
 
             for (Pitanje p : importovanaPitanja)
                 if (p.getNaziv().equals(nazivPitanja)) {
-                    throwAlert("Kviz nije ispravan, postoje pitanja sa istim nazivom!");
+                    izbaciAlert("Kviz nije ispravan, postoje pitanja sa istim nazivom!");
                     return;
                 }
 
@@ -464,20 +513,18 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
             }
         }
 
-        if (kategorijaKviza == null) {
-            kategorijaKviza = new Kategorija(nazivKategorijeKviza, "-3");
-            kategorije.add(kategorije.size() - 1, kategorijaKviza);
-            indexKategorijeSpiner = kategorije.size() - 2;
-            patchCategoryDocumentOnFirebase(kategorijaKviza);
-        }
+        nazivKategorijeKviza = (kategorijaKviza == null) ? nazivKategorijeKviza : "null-index:" + indexKategorijeSpiner;
+        validanImport(imeKviza, nazivKategorijeKviza, importovanaPitanja);
+    }
 
-        for (Pitanje p : importovanaPitanja)
-            patchQeustionDocumentOnFirebase(p);
-
-        editTextNaziv.setText(imeKviza);
-        spinnerAdapter.notifyDataSetChanged();
-        spinnerKategorije.setSelection(indexKategorijeSpiner);
-        dodanaPitanja.clear();
-        dodanaPitanja.addAll(importovanaPitanja);
-        adapterDodanaPitanja.notifyDataSetChanged();
-    }*/
+    private void validanImport(String nazivKvizaImport, String nazivKategorijeImport, ArrayList<Pitanje> pitanjaImport) {
+        final Intent intent = new Intent(Intent.ACTION_SYNC, null, DodajKvizAkt.this, FirestoreIntentService.class);
+        intent.putExtra("receiver", receiver);
+        intent.putExtra("token", TOKEN);
+        intent.putExtra("request", FirestoreIntentService.VALIDAN_IMPORT);
+        intent.putExtra("nazivKvizaImport", nazivKvizaImport);
+        intent.putExtra("nazivKategorijeImport", nazivKategorijeImport);
+        intent.putParcelableArrayListExtra("pitanjaImport", pitanjaImport);
+        startService(intent);
+    }
+}

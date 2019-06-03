@@ -40,7 +40,7 @@ public class Kategorija implements Parcelable {
 
     private void generisiFirebaseId() {
         if (naziv.equals("Svi") && id.equals("-1"))
-            firebaseId += "CAT[-ALL-]";
+            firebaseId = "CAT[-ALL-]";
         else
             firebaseId = "CAT[" + UUID.randomUUID().toString().toUpperCase() + "]";
     }

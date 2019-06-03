@@ -166,7 +166,7 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
         startService(intent);
     }
 
-    private void azurirajPitanjeDokumentFirestore(Pitanje novoPitanje) {
+    void azurirajPitanjeDokumentFirestore(Pitanje novoPitanje) {
         final Intent intent = new Intent(Intent.ACTION_SEND, null, context, FirestoreIntentService.class);
         intent.putExtra("receiver", receiver);
         intent.putExtra("token", TOKEN);
@@ -203,5 +203,4 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
                 dodajPitanje(resultData.getString("nazivPitanja"));
         }
     }
-
 }

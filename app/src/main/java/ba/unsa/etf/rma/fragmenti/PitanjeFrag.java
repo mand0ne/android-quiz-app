@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -71,7 +72,7 @@ public class PitanjeFrag extends Fragment {
         tekstPitanja = getView().findViewById(R.id.tekstPitanja);
 
         if (trenutnoPitanje != null)
-            tekstPitanja.setText(trenutnoPitanje.getTekstPitanja());
+            tekstPitanja.setText(trenutnoPitanje.getNaziv());
         else
             tekstPitanja.setText("Kviz je završen!");
     }
@@ -89,10 +90,9 @@ public class PitanjeFrag extends Fragment {
                     String item = getItem(position);
 
                     if (trenutnoPitanje.getTacan().equals(item))
-                        row.setBackgroundColor(getResources().getColor(R.color.zelena));
-
+                        row.setBackgroundColor(ContextCompat.getColor(getContext(), R.color.zelena));
                     if (odabraniOdgovor.equals(item) && !trenutnoPitanje.getTacan().equals(odabraniOdgovor))
-                        row.setBackgroundColor(getResources().getColor(R.color.crvena));
+                        row.setBackgroundColor(ContextCompat.getColor(getContext(), R.color.crvena));
                 } else
                     row.setBackgroundColor(0x000000);
 
@@ -128,7 +128,7 @@ public class PitanjeFrag extends Fragment {
                             odgovori.clear();
                             trenutnoPitanje = pitanjaKviza.remove(new Random().nextInt(pitanjaKviza.size()));
                             odgovori.addAll(trenutnoPitanje.dajRandomOdgovore());
-                            tekstPitanja.setText(trenutnoPitanje.getTekstPitanja());
+                            tekstPitanja.setText(trenutnoPitanje.getNaziv());
 
                             oAdapter.notifyDataSetChanged();
                             kliknutOdgovor = false;
@@ -140,12 +140,13 @@ public class PitanjeFrag extends Fragment {
                         @SuppressLint("SetTextI18n")
                         @Override
                         public void run() {
+                            ((IgrajKvizAkt) Objects.requireNonNull(getActivity())).iskljuciAlarm();
                             odgovori.clear();
                             oAdapter.notifyDataSetChanged();
                             tekstPitanja.setText("Kviz je završen!");
                             unosRangLista();
                         }
-                    }, 2000);
+                    }, 1100);
                 }
             }
         });
@@ -174,7 +175,7 @@ public class PitanjeFrag extends Fragment {
                             if (input.getText() != null && !input.getText().toString().trim().isEmpty()) {
                                 dialog.cancel();
                                 ((IgrajKvizAkt) Objects.requireNonNull(getActivity()))
-                                        .azurirajRangListuIPrikazi(input.getText().toString(), model.getSkor().getValue());
+                                        .dohvatiRangListuZaPrikaz(input.getText().toString(), model.getSkor().getValue());
                             } else
                                 input.setError("Morate unijeti nickname!");
                         }
@@ -185,6 +186,7 @@ public class PitanjeFrag extends Fragment {
                         @Override
                         public void onClick(View view) {
                             dialog.cancel();
+                            Objects.requireNonNull(getActivity()).finish();
                         }
                     });
                 }

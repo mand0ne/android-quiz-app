@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 import ba.unsa.etf.rma.R;
+import ba.unsa.etf.rma.aktivnosti.KvizoviAkt;
 import ba.unsa.etf.rma.customKlase.CustomAdapter;
 import ba.unsa.etf.rma.customKlase.KvizoviViewModel;
 import ba.unsa.etf.rma.modeli.Kategorija;
@@ -62,6 +63,8 @@ public class ListaFrag extends Fragment {
         listaKategorija.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Objects.requireNonNull(getActivity())
+                        .findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
                 model.setKategorija((Kategorija) parent.getItemAtPosition(position));
             }
         });
@@ -76,6 +79,9 @@ public class ListaFrag extends Fragment {
     }
 
     public void refreshujSpinner() {
-        listaKategorija.setSelection(0);
+        ((KvizoviAkt) Objects.requireNonNull(getActivity()))
+                .intentServiceFiltriranje((Kategorija) kategorijaAdapter.getItem(0));
+        Objects.requireNonNull(getActivity())
+                .findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
     }
 }

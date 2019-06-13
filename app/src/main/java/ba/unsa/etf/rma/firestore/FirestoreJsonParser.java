@@ -57,7 +57,7 @@ class FirestoreJsonParser {
         return listaKategorija;
     }
 
-    private Kategorija parsirajDokumentKategorije(JSONObject kategorija) throws JSONException {
+    Kategorija parsirajDokumentKategorije(JSONObject kategorija) throws JSONException {
         String name = kategorija.getString("name");
         int index = name.indexOf("Kategorije");
         String firebaseId = name.substring(index + 11);
@@ -95,7 +95,7 @@ class FirestoreJsonParser {
         return listaPitanja;
     }
 
-    private Pitanje parsirajDokumentPitanje(JSONObject pitanje) throws JSONException {
+    Pitanje parsirajDokumentPitanje(JSONObject pitanje) throws JSONException {
         String name = pitanje.getString("name");
         int index = name.indexOf("Pitanja");
         String firebaseId = name.substring(index + 8);
@@ -121,7 +121,7 @@ class FirestoreJsonParser {
         if (naziv == null || odgovori.isEmpty())
             return null;
 
-        return new Pitanje(naziv, naziv, odgovori, odgovori.get(indexTacnog), firebaseId);
+        return new Pitanje(naziv, odgovori, odgovori.get(indexTacnog), firebaseId);
     }
 
     ArrayList<Kviz> parsirajKvizove(String kvizoviFirebase, ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja) {
@@ -146,7 +146,7 @@ class FirestoreJsonParser {
         return listaKvizova;
     }
 
-    private Kviz parsirajDokumentKviz(JSONObject kviz, ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja) throws JSONException {
+    Kviz parsirajDokumentKviz(JSONObject kviz, ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja) throws JSONException {
 
         String name = kviz.getString("name");
         int index = name.indexOf("Kvizovi");

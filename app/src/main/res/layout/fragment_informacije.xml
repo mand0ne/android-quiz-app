@@ -9,12 +9,14 @@
 
     <TextView
         android:id="@+id/infNazivKviza"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="32dp"
-        android:layout_marginBottom="32dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="16dp"
         app:layout_constraintBottom_toTopOf="@+id/guideline1"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/guideline9"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -22,7 +24,7 @@
         android:id="@+id/infBrojTacnihPitanja"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="32dp"
         android:layout_marginBottom="32dp"
         app:layout_constraintBottom_toTopOf="@+id/guideline2"
@@ -33,7 +35,7 @@
         android:id="@+id/infBrojPreostalihPitanja"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="32dp"
         android:layout_marginBottom="32dp"
         app:layout_constraintBottom_toTopOf="@+id/guideline3"
@@ -44,7 +46,7 @@
         android:id="@+id/infProcenatTacni"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="32dp"
         android:layout_marginBottom="32dp"
         app:layout_constraintBottom_toTopOf="@+id/guideline4"
@@ -60,6 +62,7 @@
         android:layout_marginBottom="32dp"
         android:text="@string/labelNazivKviza"
         android:textAppearance="@style/TextAppearance.AppCompat"
+        android:textColor="#003091"
         app:layout_constraintBottom_toTopOf="@+id/guideline1"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -74,6 +77,7 @@
         android:layout_marginBottom="32dp"
         android:text="@string/labelBrojTacnih"
         android:textAppearance="@style/TextAppearance.AppCompat"
+        android:textColor="#003091"
         app:layout_constraintBottom_toTopOf="@+id/guideline2"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline1"
@@ -88,6 +92,7 @@
         android:layout_marginBottom="32dp"
         android:text="@string/labelBrojPreostalih"
         android:textAppearance="@style/TextAppearance.AppCompat"
+        android:textColor="#003091"
         app:layout_constraintBottom_toTopOf="@+id/guideline3"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline2"
@@ -96,12 +101,13 @@
     <TextView
         android:id="@+id/labelProcenatTacnih"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="15dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="32dp"
         android:layout_marginBottom="32dp"
         android:text="@string/labelProcenatTacnih"
         android:textAppearance="@style/TextAppearance.AppCompat"
+        android:textColor="#003091"
         app:layout_constraintBottom_toTopOf="@+id/guideline4"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline3"
@@ -140,17 +146,29 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.5" />
+        app:layout_constraintGuide_percent="0.35" />
 
-    <Button
-        android:id="@+id/btnKraj"
+    <TextView
+        android:id="@+id/labelVrijeme"
         android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_marginTop="32dp"
-        android:layout_marginEnd="8dp"
-        android:text="@string/btnKraj"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="32dp"
+        android:text="Vrijeme:"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textColor="#FC000000"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guideline1"
-        tools:text="@string/btnKraj" />
+        app:layout_constraintTop_toTopOf="@+id/guideline1" />
+
+    <TextView
+        android:id="@+id/infVrijeme"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="32dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:textColor="#5FC004"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/labelVrijeme" />
 
 </android.support.constraint.ConstraintLayout>

@@ -20,7 +20,6 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.Objects;
 
 import ba.unsa.etf.rma.R;
@@ -38,8 +37,6 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
     private Button btnDodajTacan;
 
     private ArrayAdapter<String> adapterOdgovori;
-
-    private ArrayList<String> odgovori = new ArrayList<>();
     private Pitanje novoPitanje;
 
     private FirestoreResultReceiver receiver;
@@ -67,8 +64,9 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
 
         final Intent intent = getIntent();
         TOKEN = intent.getStringExtra("token");
+        novoPitanje = new Pitanje(null, null);
 
-        adapterOdgovori = (new ArrayAdapter<String>(this, R.layout.element_odgovora, R.id.odgovor, odgovori) {
+        adapterOdgovori = (new ArrayAdapter<String>(this, R.layout.element_odgovora, R.id.odgovor, novoPitanje.getOdgovori()) {
             @SuppressWarnings("NullableProblems")
             @Override
             public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
@@ -85,7 +83,6 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
 
         lvOdgovori.setAdapter(adapterOdgovori);
 
-        novoPitanje = new Pitanje(null, null, null);
 
         btnDodajOdgovor.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -94,8 +91,6 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
                     String odgovor = etOdgovor.getText().toString();
                     if (novoPitanje.nePostojiOdgovor(odgovor)) {
                         novoPitanje.dodajOdgovor(odgovor);
-
-                        odgovori.add(odgovor);
                         adapterOdgovori.notifyDataSetChanged();
                         etOdgovor.setText("");
                     } else
@@ -117,7 +112,6 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
                         btnDodajTacan.setEnabled(false);
                         btnDodajTacan.getBackground().setColorFilter(0xFFB79D9D, PorterDuff.Mode.MULTIPLY);
 
-                        odgovori.add(odgovor);
                         adapterOdgovori.notifyDataSetChanged();
                         etOdgovor.setText("");
                     } else
@@ -130,7 +124,7 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
         lvOdgovori.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String obrisani = odgovori.remove(position);
+                String obrisani = novoPitanje.getOdgovori().remove(position);
 
                 if (obrisani.equals(novoPitanje.getTacan())) {
                     novoPitanje.setTacan(null);
@@ -138,7 +132,6 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
                     btnDodajTacan.getBackground().clearColorFilter();
                 }
 
-                novoPitanje.getOdgovori().remove(obrisani);
                 adapterOdgovori.notifyDataSetChanged();
             }
         });
@@ -157,12 +150,13 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
     }
 
     private void firestoreRequest() {
-        String naziv = etNaziv.getText().toString();
         final Intent intent = new Intent(Intent.ACTION_SYNC, null, DodajPitanjeAkt.this, FirestoreIntentService.class);
         intent.putExtra("receiver", receiver);
         intent.putExtra("token", TOKEN);
+
         intent.putExtra("request", FirestoreIntentService.VALIDNO_PITANJE);
-        intent.putExtra("nazivPitanja", naziv);
+        String nazivPitanja = etNaziv.getText().toString();
+        intent.putExtra("nazivPitanja", nazivPitanja);
         startService(intent);
     }
 
@@ -177,7 +171,6 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
 
     private void dodajPitanje(String nazivPitanja) {
         novoPitanje.setNaziv(nazivPitanja);
-        novoPitanje.setTekstPitanja(etNaziv.getText().toString());
         azurirajPitanjeDokumentFirestore(novoPitanje);
 
         final Intent intent = new Intent();
@@ -202,5 +195,12 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
             else
                 dodajPitanje(resultData.getString("nazivPitanja"));
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        final Intent intent = new Intent();
+        setResult(RESULT_CANCELED, intent);
+        finish();
     }
 }

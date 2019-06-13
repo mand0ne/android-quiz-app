@@ -50,9 +50,19 @@
         android:gravity="center">
 
         <ProgressBar
+            android:id="@+id/progressBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:indeterminate="true" />
+
+        <TextView
+            android:id="@+id/progressText"
+            android:layout_below="@+id/progressBar"
+            android:layout_alignBaseline="@id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Učitavam..." />
+
     </RelativeLayout>
 
 </android.support.constraint.ConstraintLayout>

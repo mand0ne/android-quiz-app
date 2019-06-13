@@ -13,9 +13,6 @@ import android.widget.EditText;
 import com.maltaisn.icondialog.Icon;
 import com.maltaisn.icondialog.IconDialog;
 
-import java.util.ArrayList;
-import java.util.Objects;
-
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.firestore.FirestoreIntentService;
 import ba.unsa.etf.rma.firestore.FirestoreResultReceiver;
@@ -83,11 +80,12 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
     }
 
     private void firestoreRequest() {
-        String uneseniNaziv = etNaziv.getText().toString();
         final Intent intent = new Intent(Intent.ACTION_SYNC, null, DodajKategorijuAkt.this, FirestoreIntentService.class);
         intent.putExtra("receiver", receiver);
         intent.putExtra("token", TOKEN);
+
         intent.putExtra("request", FirestoreIntentService.VALIDNA_KATEGORIJA);
+        String uneseniNaziv = etNaziv.getText().toString();
         intent.putExtra("nazivKategorije", uneseniNaziv);
         startService(intent);
     }
@@ -101,13 +99,12 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         startService(intent);
     }
 
-    private void dodajKategoriju(String nazivKategorije, ArrayList<Kategorija> noveKategorije) {
+    private void dodajKategoriju(String nazivKategorije) {
         Kategorija novaKategorija = new Kategorija(nazivKategorije, etIkona.getText().toString());
         azurirajKategorijaDokumentFirestore(novaKategorija);
-        noveKategorije.add(novaKategorija);
 
         final Intent intent = new Intent();
-        intent.putExtra("noveKategorije", noveKategorije);
+        intent.putExtra("novaKategorija", novaKategorija);
         setResult(RESULT_OK, intent);
         finish();
     }
@@ -126,8 +123,14 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
             if (resultData.getBoolean("postojiKategorija"))
                 izbaciAlert(resultData.getString("nazivKategorije"));
             else
-                dodajKategoriju(resultData.getString("nazivKategorije"),
-                        Objects.requireNonNull(resultData.<Kategorija>getParcelableArrayList("noveKategorije")));
+                dodajKategoriju(resultData.getString("nazivKategorije"));
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        final Intent intent = new Intent();
+        setResult(RESULT_CANCELED, intent);
+        finish();
     }
 }

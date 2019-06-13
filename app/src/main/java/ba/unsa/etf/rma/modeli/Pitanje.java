@@ -9,23 +9,20 @@ import java.util.UUID;
 
 @SuppressWarnings("unused")
 public class Pitanje implements Parcelable {
-    private String naziv;
-    private String tekstPitanja;
+    private String naziv;   // ujedno i tekst pitanja
     private ArrayList<String> odgovori = new ArrayList<>();
     private String tacan = null;
     private String firebaseId;
 
-    public Pitanje(String naziv, String tekstPitanja, ArrayList<String> odgovori, String tacan, String firebaseId) {
+    public Pitanje(String naziv, ArrayList<String> odgovori, String tacan, String firebaseId) {
         this.naziv = naziv;
-        this.tekstPitanja = tekstPitanja;
         this.odgovori = odgovori;
         this.tacan = tacan;
         this.firebaseId = firebaseId;
     }
 
-    public Pitanje(String naziv, String tekstPitanja, String tacan) {
+    public Pitanje(String naziv, String tacan) {
         this.naziv = naziv;
-        this.tekstPitanja = tekstPitanja;
 
         if (tacan != null) {
             odgovori.add(tacan);
@@ -41,14 +38,6 @@ public class Pitanje implements Parcelable {
 
     public void setNaziv(String naziv) {
         this.naziv = naziv;
-    }
-
-    public String getTekstPitanja() {
-        return tekstPitanja;
-    }
-
-    public void setTekstPitanja(String tekstPitanja) {
-        this.tekstPitanja = tekstPitanja;
     }
 
     public ArrayList<String> getOdgovori() {
@@ -112,7 +101,6 @@ public class Pitanje implements Parcelable {
 
     public Pitanje(Parcel in) {
         this.naziv = in.readString();
-        this.tekstPitanja = in.readString();
         this.odgovori = in.createStringArrayList();
         this.tacan = in.readString();
         this.firebaseId = in.readString();
@@ -126,7 +114,6 @@ public class Pitanje implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.naziv);
-        dest.writeString(this.tekstPitanja);
         dest.writeStringList(this.odgovori);
         dest.writeString(this.tacan);
         dest.writeString(this.firebaseId);

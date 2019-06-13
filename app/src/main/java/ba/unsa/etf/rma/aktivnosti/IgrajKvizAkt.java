@@ -1,11 +1,29 @@
 package ba.unsa.etf.rma.aktivnosti;
 
+import android.annotation.TargetApi;
+import android.app.AlarmManager;
+import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 
@@ -24,8 +42,74 @@ import static ba.unsa.etf.rma.firestore.FirestoreIntentService.DOHVATI_RANG_LIST
 
 public class IgrajKvizAkt extends AppCompatActivity implements FirestoreResultReceiver.Receiver {
 
+    private class NotificationHelper extends ContextWrapper {
+        public static final String channelID = "channelID";
+        public static final String channelName = "Channel Name";
+
+        private NotificationManager mManager;
+
+        public NotificationHelper(Context base) {
+            super(base);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                createChannel();
+            }
+        }
+
+        @TargetApi(Build.VERSION_CODES.O)
+        private void createChannel() {
+            NotificationChannel channel = new NotificationChannel(channelID, channelName, NotificationManager.IMPORTANCE_HIGH);
+
+            getManager().createNotificationChannel(channel);
+        }
+
+        public NotificationManager getManager() {
+            if (mManager == null) {
+                mManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            }
+
+            return mManager;
+        }
+
+        public NotificationCompat.Builder getChannelNotification() {
+            return new NotificationCompat.Builder(context, channelID)
+                    .setContentTitle("Vrijeme isteklo!")
+                    .setContentText("Kviz je završen.")
+                    .setSmallIcon(R.drawable.applogo);
+        }
+    }
+
+    private class AlarmReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            NotificationHelper notificationHelper = new NotificationHelper(context);
+            NotificationCompat.Builder nb = notificationHelper.getChannelNotification();
+            notificationHelper.getManager().notify(1, nb.build());
+
+            Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+
+            if (alert == null) {
+                alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+                if (alert == null)
+                    alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+            }
+
+            ringtone = RingtoneManager.getRingtone(context, alert);
+            if (ringtone != null)
+                ringtone.play();
+
+            Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                v.vibrate(VibrationEffect.createOneShot(750, VibrationEffect.DEFAULT_AMPLITUDE));
+            else
+                v.vibrate(750);     // API 26+ deprecation
+        }
+    }
+
     private Context context;
+    private AlarmReceiver alarmReceiver;
     private Kviz igraniKviz;
+    private Ringtone ringtone;
 
     private FirestoreResultReceiver receiver;
     // Firestore access token
@@ -40,6 +124,10 @@ public class IgrajKvizAkt extends AppCompatActivity implements FirestoreResultRe
         receiver = new FirestoreResultReceiver(new Handler());
         receiver.setReceiver(this);
 
+        alarmReceiver = new AlarmReceiver();
+        this.registerReceiver(alarmReceiver,
+                new IntentFilter("ba.unsa.etf.rma.aktivnosti.IgrajKvizAkt$AlarmReceiver"));
+
         final Intent intent = getIntent();
         igraniKviz = intent.getParcelableExtra("kviz");
         TOKEN = intent.getStringExtra("token");
@@ -53,29 +141,72 @@ public class IgrajKvizAkt extends AppCompatActivity implements FirestoreResultRe
         pFrag.setArguments(b);
         iFrag.setArguments(b);
 
+
         getSupportFragmentManager().beginTransaction().replace(R.id.informacijePlace, iFrag).commit();
         getSupportFragmentManager().beginTransaction().replace(R.id.pitanjePlace, pFrag).commit();
     }
 
-    private void azurirajRangListuFirestore(RangListaKviz rangListaKviz) {
-        final Intent intent = new Intent(Intent.ACTION_SEND, null, context, FirestoreIntentService.class);
-        intent.putExtra("receiver", receiver);
-        intent.putExtra("token", TOKEN);
-        intent.putExtra("rangListaKviz", rangListaKviz);
-        intent.putExtra("request", AZURIRAJ_RANG_LISTU);
-        startService(intent);
+    public void postaviAlarm(long miliSekunde) {
+        Calendar time = Calendar.getInstance();
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent("ba.unsa.etf.rma.aktivnosti.IgrajKvizAkt$AlarmReceiver");
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 1, intent, 0);
+        if (miliSekunde != 0)
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, time.getTimeInMillis() + miliSekunde + 200, pendingIntent);
     }
 
-    public void azurirajRangListuIPrikazi(String nickname, Double skor) {
-        final Intent intent = new Intent(Intent.ACTION_SYNC, null, IgrajKvizAkt.this, FirestoreIntentService.class);
+    public void iskljuciAlarm() {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent("ba.unsa.etf.rma.aktivnosti.IgrajKvizAkt$AlarmReceiver");
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 1, intent, 0);
+        alarmManager.cancel(pendingIntent);
+    }
+
+    private Intent kreirajIntent(int request) {
+        final Intent intent = new Intent(Intent.ACTION_SYNC, null, context, FirestoreIntentService.class);
         intent.putExtra("receiver", receiver);
         intent.putExtra("token", TOKEN);
+        intent.putExtra("request", request);
+
+        return intent;
+    }
+
+    public void dohvatiRangListuZaPrikaz(String nickname, Double skor) {
+        final Intent intent = kreirajIntent(DOHVATI_RANG_LISTU);
         intent.putExtra("nazivKviza", igraniKviz.getNaziv());
         intent.putExtra("kvizFirebaseId", igraniKviz.firebaseId());
         intent.putExtra("nickname", nickname);
         intent.putExtra("skor", skor);
-        intent.putExtra("request", FirestoreIntentService.DOHVATI_RANG_LISTU);
         startService(intent);
+    }
+
+    private void azurirajRangListuFirestore(RangListaKviz rangListaKviz) {
+        final Intent intent = kreirajIntent(AZURIRAJ_RANG_LISTU);
+        intent.putExtra("rangListaKviz", rangListaKviz);
+        startService(intent);
+    }
+
+    public void istekloVrijeme(int brojPreostalihPitanja) {
+        StringBuilder message = new StringBuilder("Preostalo je " + brojPreostalihPitanja);
+        if (brojPreostalihPitanja % 10 == 1)
+            message.append(" pitanje.\n");
+        else
+            message.append(" pitanja.\n");
+
+        message.append("Pokušajte ponovo...");
+        AlertDialog alert = new AlertDialog.Builder(context)
+                .setCancelable(false)
+                .setTitle("Vrijeme isteklo!")
+                .setMessage(message.toString())
+                .setPositiveButton("Nazad", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        finish();
+                    }
+                }).create();
+
+        alert.show();
     }
 
     @Override
@@ -103,6 +234,14 @@ public class IgrajKvizAkt extends AppCompatActivity implements FirestoreResultRe
             rangLista.setArguments(bundle);
             getSupportFragmentManager().beginTransaction().replace(R.id.pitanjePlace, rangLista).commit();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(alarmReceiver);
+        if (ringtone != null)
+            ringtone.stop();
     }
 }
 

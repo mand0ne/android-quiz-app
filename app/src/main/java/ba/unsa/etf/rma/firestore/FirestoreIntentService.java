@@ -3,11 +3,11 @@ package ba.unsa.etf.rma.firestore;
 import android.app.IntentService;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.os.ResultReceiver;
 import android.support.annotation.Nullable;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -41,6 +41,9 @@ public class FirestoreIntentService extends IntentService {
         }
     }
 
+    public static final int DODAJ_KVIZ_AKT = 1;
+
+    public static final int DOHVATI_KATEGORIJE = 101;
     public static final int DOHVATI_PITANJA = 102;
     public static final int DOHVATI_RANG_LISTU = 103;
     public static final int FILTRIRAJ_KVIZOVE = 110;
@@ -79,6 +82,31 @@ public class FirestoreIntentService extends IntentService {
         Bundle bundle = new Bundle();
 
         switch (request) {
+            case DODAJ_KVIZ_AKT:
+                try {
+                    ArrayList<Kategorija> kategorije = dohvatiKategorije();
+                    ArrayList<Pitanje> pitanja = dohvatiPitanja();
+                    String kvizFirebaseId = intent.getStringExtra("kvizFirebaseId");
+                    if (kvizFirebaseId != null) {
+                        Kviz trenutniKviz = dohvatiKviz(
+                                intent.getStringExtra("kvizFirebaseId"), kategorije, pitanja);
+                        bundle.putParcelable("trenutniKviz", trenutniKviz);
+                    }
+                    bundle.putParcelableArrayList("kategorije", kategorije);
+                    bundle.putParcelableArrayList("pitanja", pitanja);
+                    resultReceiver.send(DODAJ_KVIZ_AKT, bundle);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
+            case DOHVATI_KATEGORIJE:
+                try {
+                    bundle.putParcelableArrayList("kategorije", dohvatiKategorije());
+                    resultReceiver.send(DOHVATI_KATEGORIJE, bundle);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
             case DOHVATI_PITANJA:
                 try {
                     bundle.putParcelableArrayList("pitanja", dohvatiPitanja());
@@ -115,7 +143,6 @@ public class FirestoreIntentService extends IntentService {
                     String nazivKategorije = intent.getStringExtra("nazivKategorije");
                     bundle.putBoolean("postojiKategorija", postojiKategorija(nazivKategorije));
                     bundle.putString("nazivKategorije", nazivKategorije);
-                    bundle.putParcelableArrayList("noveKategorije", dohvatiKategorije());
                     resultReceiver.send(VALIDNA_KATEGORIJA, bundle);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -124,12 +151,8 @@ public class FirestoreIntentService extends IntentService {
             case VALIDAN_KVIZ:
                 try {
                     String nazivKviza = intent.getStringExtra("nazivKviza");
-                    ArrayList<Kategorija> kategorije = dohvatiKategorije();
-                    ArrayList<Kviz> kvizovi = dohvatiKvizove(kategorije, dohvatiPitanja());
                     bundle.putBoolean("postojiKviz", postojiKviz(nazivKviza));
                     bundle.putString("nazivKviza", nazivKviza);
-                    bundle.putParcelableArrayList("kategorije", kategorije);
-                    bundle.putParcelableArrayList("kvizovi", kvizovi);
                     resultReceiver.send(VALIDAN_KVIZ, bundle);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -146,26 +169,26 @@ public class FirestoreIntentService extends IntentService {
                 }
                 break;
             case VALIDAN_IMPORT:
-                try{
+                try {
                     boolean validan = true;
                     String nazivKvizaImport = intent.getStringExtra("nazivKvizaImport");
                     String nazivKategorijeImport = intent.getStringExtra("nazivKategorijeImport");
 
-                    if(!nazivKategorijeImport.contains("null-index:"))
-                        validan = validan && !postojiKategorija(nazivKategorijeImport);
+                    if (!nazivKategorijeImport.contains("null-index:"))
+                        validan = !postojiKategorija(nazivKategorijeImport);
                     validan = validan && !postojiKviz(nazivKvizaImport);
                     ArrayList<Pitanje> pitanjaImport = intent.getParcelableArrayListExtra("pitanjaImport");
-                    for(Pitanje pitanje : pitanjaImport)
+                    for (Pitanje pitanje : pitanjaImport)
                         validan = validan && !postojiPitanje(pitanje.getNaziv());
 
-                    if(validan){
+                    if (validan) {
                         bundle.putString("nazivKvizaImport", nazivKvizaImport);
                         bundle.putString("nazivKategorijeImport", nazivKategorijeImport);
                         bundle.putParcelableArrayList("pitanja", pitanjaImport);
                     }
                     bundle.putBoolean("validanImport", validan);
                     resultReceiver.send(VALIDAN_IMPORT, bundle);
-                }catch(Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             case AZURIRAJ_KATEGORIJE:
@@ -234,6 +257,20 @@ public class FirestoreIntentService extends IntentService {
         return stringBuilder.toString();
     }
 
+
+    private Kviz dohvatiKviz(String kvizFirebaseId, ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja) throws Exception {
+        String connectionUrl = databaseUrl + "/Kvizovi/" + kvizFirebaseId + "?fields=fields%2Cname&access_token=";
+
+        url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
+        uspostaviVezu(TIP_ZAHTJEVA.GET);
+
+        String kvizJson = dajOdgovorServera();
+        FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser(false);
+        return firestoreJsonParser.parsirajDokumentKviz(new JSONObject(kvizJson), kategorije, pitanja);
+    }
+
+
+    // Sljedece metode dohvacaju odgovarajuci dokumente iz baze
     private ArrayList<Kategorija> dohvatiKategorije() throws Exception {
         String connectionUrl = databaseUrl + "/Kategorije?fields=documents(fields%2Cname)" + "&access_token=";
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
@@ -339,6 +376,8 @@ public class FirestoreIntentService extends IntentService {
         return rangListaKviz;
     }
 
+
+    // Sljedece metode testiraju da li postoji odgovarajuci podatak u bazi
     private boolean postojiKviz(String nazivKviza) throws Exception {
         String structuredQuery = "{\n" +
                 " \"structuredQuery\": {\n" +
@@ -487,6 +526,8 @@ public class FirestoreIntentService extends IntentService {
         }
     }
 
+
+    // Sljedece metode salju PATCH request i azuriraju specificni dokument u bazi
     private void azurirajKategorije(Kategorija kategorija) throws Exception {
         String connectionUrl = databaseUrl + "/Kategorije/" + kategorija.firebaseId() + "?access_token=";
 

@@ -61,16 +61,17 @@ class FirestoreJsonParser {
         String name = kategorija.getString("name");
         int index = name.indexOf("Kategorije");
         String firebaseId = name.substring(index + 11);
-        String naziv, idIkonice;
+        String naziv;
+        int idIkonice;
 
         JSONObject fields = kategorija.getJSONObject("fields");
         JSONObject nazivKategorije = fields.getJSONObject("naziv");
         naziv = nazivKategorije.getString("stringValue");
 
         JSONObject jsonId = fields.getJSONObject("idIkonice");
-        idIkonice = jsonId.getString("integerValue");
+        idIkonice = jsonId.getInt("integerValue");
 
-        if (naziv == null || idIkonice == null)
+        if (naziv == null)
             return null;
 
         return new Kategorija(naziv, idIkonice, firebaseId);
@@ -177,15 +178,15 @@ class FirestoreJsonParser {
         ArrayList<Pitanje> pitanjaKviza = new ArrayList<>();
 
         for (Kategorija k : kategorije)
-            if (k.firebaseId().equals(idKategorije))
+            if (k.firestoreId().equals(idKategorije))
                 kategorijaKviza = k;
         if (kategorijaKviza == null)
-            kategorijaKviza = new Kategorija("Svi", "-1");
+            kategorijaKviza = new Kategorija("Svi", -1);
 
 
         for (Pitanje p : pitanja) {
             for (String pitanjeID : idPitanja) {
-                if (p.firebaseId().equals(pitanjeID))
+                if (p.firestoreId().equals(pitanjeID))
                     pitanjaKviza.add(p);
             }
         }

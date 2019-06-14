@@ -174,7 +174,7 @@ public class IgrajKvizAkt extends AppCompatActivity implements FirestoreResultRe
     public void dohvatiRangListuZaPrikaz(String nickname, Double skor) {
         final Intent intent = kreirajIntent(DOHVATI_RANG_LISTU);
         intent.putExtra("nazivKviza", igraniKviz.getNaziv());
-        intent.putExtra("kvizFirebaseId", igraniKviz.firebaseId());
+        intent.putExtra("kvizFirebaseId", igraniKviz.firestoreId());
         intent.putExtra("nickname", nickname);
         intent.putExtra("skor", skor);
         startService(intent);

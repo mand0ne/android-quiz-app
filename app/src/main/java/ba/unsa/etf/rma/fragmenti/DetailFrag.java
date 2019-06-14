@@ -102,14 +102,14 @@ public class DetailFrag extends Fragment {
         intent.putExtra("receiver", ((KvizoviAkt) Objects.requireNonNull(getActivity())).getReceiver());
         intent.putExtra("token", ((KvizoviAkt) getActivity()).getTOKEN());
         intent.putExtra("request", FirestoreIntentService.FILTRIRAJ_KVIZOVE);
-        intent.putExtra("kategorijaFirebaseId", trenutnaKategorija.firebaseId());
+        intent.putExtra("kategorijaFirebaseId", trenutnaKategorija.firestoreId());
         getActivity().startService(intent);
     }
 
     public void azurirajKvizove(ArrayList<Kviz> azuriraniKvizovi) {
         kvizoviFragment.clear();
         kvizoviFragment.addAll(azuriraniKvizovi);
-        kvizoviFragment.add(new Kviz("Dodaj kviz", new Kategorija("-100", "-100"), null));
+        kvizoviFragment.add(new Kviz("Dodaj kviz", new Kategorija("-100", -100), null));
         kvizAdapter.notifyDataSetChanged();
     }
 }

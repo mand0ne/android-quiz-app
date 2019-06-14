@@ -7,19 +7,19 @@ import java.util.UUID;
 
 public class Kategorija implements Parcelable {
     private String naziv;
-    private String id;
-    private String firebaseId;
+    private int idIkonice;
+    private String firestoreId;
 
-    public Kategorija(String naziv, String id, String firebaseId) {
+    public Kategorija(String naziv, int idIkonice, String firestoreId) {
         this.naziv = naziv;
-        this.id = id;
-        this.firebaseId = firebaseId;
+        this.idIkonice = idIkonice;
+        this.firestoreId = firestoreId;
     }
 
-    public Kategorija(String naziv, String id) {
+    public Kategorija(String naziv, int idIkonice) {
         this.naziv = naziv;
-        this.id = id;
-        generisiFirebaseId();
+        this.idIkonice = idIkonice;
+        generisiFirestoreId();
     }
 
     public String getNaziv() {
@@ -30,23 +30,23 @@ public class Kategorija implements Parcelable {
         this.naziv = naziv;
     }
 
-    public String getId() {
-        return id;
+    public int getIdIkonice() {
+        return idIkonice;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setIdIkonice(int id) {
+        this.idIkonice = id;
     }
 
-    private void generisiFirebaseId() {
-        if (naziv.equals("Svi") && id.equals("-1"))
-            firebaseId = "CAT[-ALL-]";
+    private void generisiFirestoreId() {
+        if (naziv.equals("Svi") && idIkonice == -1)
+            firestoreId = "CAT[-ALL-]";
         else
-            firebaseId = "CAT[" + UUID.randomUUID().toString().toUpperCase() + "]";
+            firestoreId = "CAT[" + UUID.randomUUID().toString().toUpperCase() + "]";
     }
 
-    public String firebaseId() {
-        return firebaseId;
+    public String firestoreId() {
+        return firestoreId;
     }
 
     @SuppressWarnings("NullableProblems")
@@ -57,7 +57,7 @@ public class Kategorija implements Parcelable {
 
     @Override
     public int hashCode() {
-        return (id + naziv).hashCode();
+        return (idIkonice + naziv).hashCode();
     }
 
     @Override
@@ -65,13 +65,13 @@ public class Kategorija implements Parcelable {
         if (getClass() != obj.getClass())
             return false;
 
-        return this.naziv.equals(((Kategorija) obj).naziv) && this.id.equals(((Kategorija) obj).id);
+        return this.naziv.equals(((Kategorija) obj).naziv) && this.idIkonice == ((Kategorija) obj).idIkonice;
     }
 
     public Kategorija(Parcel in) {
         this.naziv = in.readString();
-        this.id = in.readString();
-        this.firebaseId = in.readString();
+        this.idIkonice = in.readInt();
+        this.firestoreId = in.readString();
     }
 
     @Override
@@ -82,8 +82,8 @@ public class Kategorija implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.naziv);
-        dest.writeString(this.id);
-        dest.writeString(this.firebaseId);
+        dest.writeInt(this.idIkonice);
+        dest.writeString(this.firestoreId);
     }
 
     public static final Parcelable.Creator<Kategorija> CREATOR = new Parcelable.Creator<Kategorija>() {

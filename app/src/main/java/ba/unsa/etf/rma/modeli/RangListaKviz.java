@@ -7,17 +7,17 @@ import java.util.ArrayList;
 
 public class RangListaKviz implements Parcelable {
     private String nazivKviza;
-    private String kvizFirebaseId;
+    private String kvizFirestoreId;
     private ArrayList<IgraPair> lista = new ArrayList<>();
 
-    public RangListaKviz(String nazivKviza, String kvizFirebaseId) {
+    public RangListaKviz(String nazivKviza, String kvizFirestoreId) {
         this.nazivKviza = nazivKviza;
-        this.kvizFirebaseId = kvizFirebaseId;
+        this.kvizFirestoreId = kvizFirestoreId;
     }
 
-    public RangListaKviz(String nazivKviza, String kvizFirebaseId, ArrayList<IgraPair> lista) {
+    public RangListaKviz(String nazivKviza, String kvizFirestoreId, ArrayList<IgraPair> lista) {
         this.nazivKviza = nazivKviza;
-        this.kvizFirebaseId = kvizFirebaseId;
+        this.kvizFirestoreId = kvizFirestoreId;
         this.lista = lista;
     }
 
@@ -29,12 +29,12 @@ public class RangListaKviz implements Parcelable {
         this.nazivKviza = nazivKviza;
     }
 
-    public void setKvizFirebaseId(String firebaseId) {
-        this.kvizFirebaseId = firebaseId;
+    public void setKvizFirestoreId(String firebaseId) {
+        this.kvizFirestoreId = firebaseId;
     }
 
-    public String firebaseId() {
-        return "RANK[" + kvizFirebaseId + "]";
+    public String firestoreId() {
+        return "RANK[" + kvizFirestoreId + "]";
     }
 
     public ArrayList<IgraPair> getLista() {
@@ -47,7 +47,7 @@ public class RangListaKviz implements Parcelable {
 
     public RangListaKviz(Parcel in) {
         this.nazivKviza = in.readString();
-        this.kvizFirebaseId = in.readString();
+        this.kvizFirestoreId = in.readString();
         this.lista = in.createTypedArrayList(IgraPair.CREATOR);
     }
 
@@ -59,7 +59,7 @@ public class RangListaKviz implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.nazivKviza);
-        dest.writeString(this.kvizFirebaseId);
+        dest.writeString(this.kvizFirestoreId);
         dest.writeTypedList(this.lista);
     }
 

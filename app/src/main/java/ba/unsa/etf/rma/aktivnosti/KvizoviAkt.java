@@ -1,10 +1,12 @@
 package ba.unsa.etf.rma.aktivnosti;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.CalendarContract;
@@ -19,6 +21,11 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.common.collect.Lists;
+
+import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -89,7 +96,7 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
 
     public void start() {
         if (kategorije.isEmpty())
-            kategorije.add(new Kategorija("Svi", "-1"));
+            kategorije.add(new Kategorija("Svi", -1));
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -147,8 +154,7 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
                     if (connected) {
                         Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
                         dodajAzurirajKvizAktivnost(kliknutiKviz);
-                    }
-                    else
+                    } else
                         izbaciAlertZaKonekciju();
 
                     return true;
@@ -183,7 +189,7 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
                     Kategorija selektovanaKategorija = (Kategorija) spinnerKategorije.getSelectedItem();
 
                     if (selektovanaKategorija != null) {
-                        if(connected)
+                        if (connected)
                             findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
                         intentServiceFiltriranje(selektovanaKategorija);
                     }
@@ -290,7 +296,7 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
 
         if (kviz != null) {
             activity = PROMIJENI_KVIZ;
-            intent.putExtra("kvizFirebaseId", kviz.firebaseId());
+            intent.putExtra("kvizFirebaseId", kviz.firestoreId());
         } else
             activity = DODAJ_KVIZ;
 
@@ -307,7 +313,7 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
 
     public void azurirajKategorije(ArrayList<Kategorija> noveKategorije, boolean jeNormalniLayout) {
         kategorije.clear();
-        kategorije.add(new Kategorija("Svi", "-1"));
+        kategorije.add(new Kategorija("Svi", -1));
         kategorije.addAll(noveKategorije);
 
         if (jeNormalniLayout)
@@ -339,7 +345,7 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
         intent.putExtra("receiver", receiver);
         intent.putExtra("token", TOKEN);
         intent.putExtra("request", FILTRIRAJ_KVIZOVE);
-        intent.putExtra("kategorijaFirebaseId", kategorija.firebaseId());
+        intent.putExtra("kategorijaFirebaseId", kategorija.firestoreId());
         startService(intent);
     }
 
@@ -357,6 +363,7 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
     @Override
     public void onBackPressed() {
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -376,7 +383,7 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
         }
     }
 
-    private void izbaciAlertZaKonekciju(){
+    private void izbaciAlertZaKonekciju() {
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(this)
                 .setTitle("Onemogućeno!")
                 .setMessage("Niste povezani na internet!");
@@ -394,10 +401,52 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
 
     @Override
     public void onNetworkAvailable() {
+        if (TOKEN == null || TOKEN.isEmpty())
+            try {
+                new getAccessToken(this).execute().get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
         Log.wtf("KvizoviAkt: ", "onNetworkAvailable");
         Toast.makeText(context, "Connected!", Toast.LENGTH_SHORT).show();
         connected = true;
-        if(spinnerKategorije != null)
+        if (spinnerKategorije != null)
             spinnerKategorije.setSelection(0);
+    }
+
+
+    private static class getAccessToken extends AsyncTask<String, Void, Boolean> {
+        private WeakReference<Activity> activityWeakReference;
+        private String TAG = getClass().getSimpleName();
+
+        getAccessToken(Activity activityWeakReference) {
+            this.activityWeakReference = new WeakReference<>(activityWeakReference);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            KvizoviAkt mainActivity = (KvizoviAkt) activityWeakReference.get();
+            if (mainActivity == null || mainActivity.isFinishing())
+                this.cancel(true);
+        }
+
+        protected Boolean doInBackground(String... params) {
+            try {
+                KvizoviAkt kvizoviAkt = (KvizoviAkt) activityWeakReference.get();
+                InputStream is = kvizoviAkt.context.getResources().openRawResource(R.raw.secret);
+                GoogleCredential credentials = GoogleCredential.fromStream(is)
+                        .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/datastore"));
+                credentials.refreshToken();
+                kvizoviAkt.TOKEN = credentials.getAccessToken();
+                Log.d(TAG, "TOKEN: " + kvizoviAkt.TOKEN);
+                return true;
+            } catch (Exception e) {
+                Log.d(TAG, "doInBackground: " + e.getMessage());
+                return false;
+            }
+        }
     }
 }

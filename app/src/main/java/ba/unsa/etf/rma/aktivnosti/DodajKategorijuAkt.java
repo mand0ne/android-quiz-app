@@ -109,7 +109,7 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
     }
 
     private void dodajKategoriju(String nazivKategorije) {
-        Kategorija novaKategorija = new Kategorija(nazivKategorije, etIkona.getText().toString());
+        Kategorija novaKategorija = new Kategorija(nazivKategorije, Integer.valueOf(etIkona.getText().toString()));
         azurirajKategorijaDokumentFirestore(novaKategorija);
 
         final Intent intent = new Intent();

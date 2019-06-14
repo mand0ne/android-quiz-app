@@ -51,19 +51,19 @@ public class GridViewAdapter extends ArrayAdapter<Kviz> {
         iconHelper.addLoadCallback(new IconHelper.LoadCallback() {
             @Override
             public void onDataLoaded() {
-                switch (trenutniKviz.getKategorija().getId()) {
-                    case "-100":
+                switch (trenutniKviz.getKategorija().getIdIkonice()) {
+                    case -100:
                         image.setImageResource(R.drawable.addico);
                         break;
-                    case "-1":
+                    case -1:
                         image.setImageResource(R.drawable.quizico);
                         break;
-                    case "-3":
+                    case -3:
                         image.setImageResource(R.drawable.undefinedquiz);
                         break;
                     default:
                         image.setImageDrawable(iconHelper.
-                                getIcon(Integer.valueOf(trenutniKviz.getKategorija().getId())).getDrawable(context));
+                                getIcon(trenutniKviz.getKategorija().getIdIkonice()).getDrawable(context));
                         break;
                 }
             }

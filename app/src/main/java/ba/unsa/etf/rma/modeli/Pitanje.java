@@ -12,13 +12,20 @@ public class Pitanje implements Parcelable {
     private String naziv;   // ujedno i tekst pitanja
     private ArrayList<String> odgovori = new ArrayList<>();
     private String tacan = null;
-    private String firebaseId;
+    private String firestoreId;
 
-    public Pitanje(String naziv, ArrayList<String> odgovori, String tacan, String firebaseId) {
+    public Pitanje(String naziv, ArrayList<String> odgovori, String tacan, String firestoreId) {
         this.naziv = naziv;
         this.odgovori = odgovori;
         this.tacan = tacan;
-        this.firebaseId = firebaseId;
+        this.firestoreId = firestoreId;
+    }
+
+    public Pitanje(String naziv, String tacan, String firestoreId) {
+        this.naziv = naziv;
+        odgovori.add(tacan);
+        this.tacan = tacan;
+        this.firestoreId = firestoreId;
     }
 
     public Pitanje(String naziv, String tacan) {
@@ -29,7 +36,7 @@ public class Pitanje implements Parcelable {
             this.tacan = tacan;
         }
 
-        generisiFirebaseId();
+        generisiFirestoreId();
     }
 
     public String getNaziv() {
@@ -76,12 +83,12 @@ public class Pitanje implements Parcelable {
         return naziv;
     }
 
-    private void generisiFirebaseId() {
-        firebaseId = "QUES[" + UUID.randomUUID().toString().toUpperCase() + "]";
+    private void generisiFirestoreId() {
+        firestoreId = "QUES[" + UUID.randomUUID().toString().toUpperCase() + "]";
     }
 
-    public String firebaseId() {
-        return firebaseId;
+    public String firestoreId() {
+        return firestoreId;
     }
 
     @Override
@@ -103,7 +110,7 @@ public class Pitanje implements Parcelable {
         this.naziv = in.readString();
         this.odgovori = in.createStringArrayList();
         this.tacan = in.readString();
-        this.firebaseId = in.readString();
+        this.firestoreId = in.readString();
     }
 
     @Override
@@ -116,7 +123,7 @@ public class Pitanje implements Parcelable {
         dest.writeString(this.naziv);
         dest.writeStringList(this.odgovori);
         dest.writeString(this.tacan);
-        dest.writeString(this.firebaseId);
+        dest.writeString(this.firestoreId);
     }
 
     public static final Parcelable.Creator<Pitanje> CREATOR = new Parcelable.Creator<Pitanje>() {

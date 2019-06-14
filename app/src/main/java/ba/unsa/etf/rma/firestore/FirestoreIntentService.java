@@ -368,7 +368,7 @@ public class FirestoreIntentService extends IntentService {
             FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser(false);
             rangListaKviz = firestoreJsonParser.parsirajRangListu(rangListaJson);
             rangListaKviz.setNazivKviza(nazivKviza);
-            rangListaKviz.setKvizFirebaseId(kvizFirebaseId);
+            rangListaKviz.setKvizFirestoreId(kvizFirebaseId);
         } catch (FileNotFoundException e) {
             rangListaKviz = new RangListaKviz(nazivKviza, kvizFirebaseId);
         }
@@ -529,13 +529,13 @@ public class FirestoreIntentService extends IntentService {
 
     // Sljedece metode salju PATCH request i azuriraju specificni dokument u bazi
     private void azurirajKategorije(Kategorija kategorija) throws Exception {
-        String connectionUrl = databaseUrl + "/Kategorije/" + kategorija.firebaseId() + "?access_token=";
+        String connectionUrl = databaseUrl + "/Kategorije/" + kategorija.firestoreId() + "?access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
         uspostaviVezu(TIP_ZAHTJEVA.PATCH);
 
         String dokument = "{\"fields\": { \"naziv\": {\"stringValue\": \"" + kategorija.getNaziv() + "\"}," +
-                "\"idIkonice\": {\"integerValue\": \"" + kategorija.getId() + "\"}}}";
+                "\"idIkonice\": {\"integerValue\": \"" + kategorija.getIdIkonice() + "\"}}}";
 
         try (OutputStream os = connection.getOutputStream()) {
             byte[] input = dokument.getBytes(StandardCharsets.UTF_8);
@@ -546,19 +546,19 @@ public class FirestoreIntentService extends IntentService {
     }
 
     private void azurirajKvizove(Kviz kviz) throws Exception {
-        String connectionUrl = databaseUrl + "/Kvizovi/" + kviz.firebaseId() + "?access_token=";
+        String connectionUrl = databaseUrl + "/Kvizovi/" + kviz.firestoreId() + "?access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
         uspostaviVezu(TIP_ZAHTJEVA.PATCH);
 
         StringBuilder dokument = new StringBuilder("{\"fields\": { \"naziv\": {\"stringValue\": \"" + kviz.getNaziv() + "\"}," +
-                "\"idKategorije\": {\"stringValue\": \"" + kviz.getKategorija().firebaseId() + "\"}," +
+                "\"idKategorije\": {\"stringValue\": \"" + kviz.getKategorija().firestoreId() + "\"}," +
                 "\"pitanja\": {\"arrayValue\": { \"values\": [");
 
         ArrayList<Pitanje> pitanja = kviz.getPitanja();
         for (int i = 0; i < pitanja.size(); i++) {
             dokument.append("{\"stringValue\": \"");
-            dokument.append(pitanja.get(i).firebaseId());
+            dokument.append(pitanja.get(i).firestoreId());
             dokument.append("\"}");
             if (i < pitanja.size() - 1)
                 dokument.append(",");
@@ -575,7 +575,7 @@ public class FirestoreIntentService extends IntentService {
     }
 
     private void azurirajPitanja(Pitanje pitanje) throws Exception {
-        String connectionUrl = databaseUrl + "/Pitanja/" + pitanje.firebaseId() + "?access_token=";
+        String connectionUrl = databaseUrl + "/Pitanja/" + pitanje.firestoreId() + "?access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
         uspostaviVezu(TIP_ZAHTJEVA.PATCH);
@@ -609,7 +609,7 @@ public class FirestoreIntentService extends IntentService {
     }
 
     private void azurirajRangListu(RangListaKviz rangListaKviz) throws Exception {
-        String connectionUrl = databaseUrl + "/Rangliste/" + rangListaKviz.firebaseId() + "?access_token=";
+        String connectionUrl = databaseUrl + "/Rangliste/" + rangListaKviz.firestoreId() + "?access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
         uspostaviVezu(TIP_ZAHTJEVA.PATCH);

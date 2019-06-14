@@ -10,19 +10,19 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
     private String naziv;
     private ArrayList<Pitanje> pitanja = new ArrayList<>();
     private Kategorija kategorija;
-    private String firebaseId;
+    private String firestoreId;
 
-    public Kviz(String naziv, ArrayList<Pitanje> pitanja, Kategorija kategorija, String firebaseId) {
+    public Kviz(String naziv, ArrayList<Pitanje> pitanja, Kategorija kategorija, String firestoreId) {
         this.naziv = naziv;
         this.pitanja = pitanja;
         this.kategorija = kategorija;
-        this.firebaseId = firebaseId;
+        this.firestoreId = firestoreId;
     }
 
     public Kviz(String naziv, Kategorija kategorija) {
         this.naziv = naziv;
         this.kategorija = kategorija;
-        generisiFirebaseId();
+        generisiFirestoreId();
     }
 
 
@@ -30,7 +30,7 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         this.naziv = naziv;
         this.kategorija = kategorija;
         this.pitanja = pitanja;
-        generisiFirebaseId();
+        generisiFirestoreId();
     }
 
     public String getNaziv() {
@@ -65,12 +65,12 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         return this.naziv.equals(((Kviz) obj).naziv);
     }
 
-    private void generisiFirebaseId() {
-        firebaseId = "QUIZ[" + UUID.randomUUID().toString().toUpperCase() + "]";
+    private void generisiFirestoreId() {
+        firestoreId = "QUIZ[" + UUID.randomUUID().toString().toUpperCase() + "]";
     }
 
-    public String firebaseId() {
-        return firebaseId;
+    public String firestoreId() {
+        return firestoreId;
     }
 
     @Override
@@ -89,7 +89,7 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         this.pitanja = new ArrayList<>();
         in.readList(this.pitanja, Pitanje.class.getClassLoader());
         this.kategorija = in.readParcelable(Kategorija.class.getClassLoader());
-        this.firebaseId = in.readString();
+        this.firestoreId = in.readString();
     }
 
     @Override
@@ -102,7 +102,7 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         dest.writeString(this.naziv);
         dest.writeList(this.pitanja);
         dest.writeParcelable(this.kategorija, flags);
-        dest.writeString(this.firebaseId);
+        dest.writeString(this.firestoreId);
     }
 
     public static final Parcelable.Creator<Kviz> CREATOR = new Parcelable.Creator<Kviz>() {

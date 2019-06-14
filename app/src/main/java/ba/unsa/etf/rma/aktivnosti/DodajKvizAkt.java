@@ -59,7 +59,7 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
 
     private Kviz trenutniKviz;
     private String originalnoImeTrenutnogKviza;
-    private Kategorija kategorijaKviza = new Kategorija("Svi", "-1");
+    private Kategorija kategorijaKviza = new Kategorija("Svi", -1);
 
     private FirestoreResultReceiver receiver;
     // Firestore access token
@@ -234,9 +234,9 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
 
     public void azurirajKategorije(ArrayList<Kategorija> kategorije) {
         this.kategorije.clear();
-        this.kategorije.add(new Kategorija("Svi", "-1"));
+        this.kategorije.add(new Kategorija("Svi", -1));
         this.kategorije.addAll(kategorije);
-        this.kategorije.add(new Kategorija("Dodaj kategoriju", "-2"));
+        this.kategorije.add(new Kategorija("Dodaj kategoriju", -2));
         spinnerAdapter.notifyDataSetChanged();
     }
 

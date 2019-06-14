@@ -42,7 +42,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        new checkIfOnline(this).execute();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        pokreniAplikaciju();
     }
 
     @Override

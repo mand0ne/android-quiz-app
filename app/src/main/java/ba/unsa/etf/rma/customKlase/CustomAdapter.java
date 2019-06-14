@@ -55,21 +55,21 @@ public class CustomAdapter extends ArrayAdapter<Object> {
             iconHelper.addLoadCallback(new IconHelper.LoadCallback() {
                 @Override
                 public void onDataLoaded() {
-                    switch (trenutniKviz.getKategorija().getId()) {
-                        case "-100":
+                    switch (trenutniKviz.getKategorija().getIdIkonice()) {
+                        case -100:
                             image.setImageResource(R.drawable.addico);
                             break;
-                        case "-1":
+                        case -1:
                             image.setImageResource(R.drawable.quizico);
                             break;
-                        case "-2":
+                        case -2:
                             break;
-                        case "-3":
+                        case -3:
                             image.setImageResource(R.drawable.undefinedquiz);
                             break;
                         default:
                             image.setImageDrawable(iconHelper.
-                                    getIcon(Integer.valueOf(trenutniKviz.getKategorija().getId())).getDrawable(context));
+                                    getIcon(trenutniKviz.getKategorija().getIdIkonice()).getDrawable(context));
                             break;
                     }
                 }
@@ -87,21 +87,21 @@ public class CustomAdapter extends ArrayAdapter<Object> {
             iconHelper.addLoadCallback(new IconHelper.LoadCallback() {
                 @Override
                 public void onDataLoaded() {
-                    switch (kategorija.getId()) {
-                        case "-100":
+                    switch (kategorija.getIdIkonice()) {
+                        case -100:
                             image.setImageResource(R.drawable.addico);
                             break;
-                        case "-1":
+                        case -1:
                             image.setImageResource(R.drawable.quizico);
                             break;
-                        case "-3":
+                        case -3:
                             image.setImageResource(R.drawable.undefinedquiz);
                             break;
-                        case "-2":
+                        case -2:
                             break;
                         default:
                             image.setImageDrawable(iconHelper.
-                                    getIcon(Integer.valueOf(kategorija.getId())).getDrawable(context));
+                                    getIcon(kategorija.getIdIkonice()).getDrawable(context));
                             break;
                     }
                 }

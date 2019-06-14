@@ -128,7 +128,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static class checkIfOnline extends AsyncTask<String, Void, Boolean> {
         private WeakReference<Activity> activityWeakReference;
-        private String TAG = getClass().getSimpleName();
 
         checkIfOnline(Activity activityWeakReference) {
             this.activityWeakReference = new WeakReference<>(activityWeakReference);

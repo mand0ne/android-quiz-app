@@ -353,7 +353,7 @@ public class FirestoreIntentService extends IntentService {
         FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser(true);
         String listaKvizova = dajOdgovorServera();
         listaKvizova = "{\n\"documents\":" + listaKvizova + "}";
-        return firestoreJsonParser.parsirajKvizove(listaKvizova, dohvatiKategorije(), dohvatiPitanja());
+        return firestoreJsonParser.parsirajKvizove(listaKvizova, kategorije, dohvatiPitanja());
     }
 
     private RangListaKviz dohvatiRangListu(String nazivKviza, String kvizFirebaseId) throws Exception {

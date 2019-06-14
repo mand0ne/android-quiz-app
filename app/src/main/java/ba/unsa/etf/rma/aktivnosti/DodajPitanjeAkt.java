@@ -5,11 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.net.ConnectivityManager;
+import android.net.Network;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -23,13 +26,15 @@ import android.widget.Toast;
 import java.util.Objects;
 
 import ba.unsa.etf.rma.R;
+import ba.unsa.etf.rma.customKlase.ConnectionStateMonitor;
 import ba.unsa.etf.rma.firestore.FirestoreIntentService;
 import ba.unsa.etf.rma.firestore.FirestoreResultReceiver;
 import ba.unsa.etf.rma.modeli.Pitanje;
 
+import static ba.unsa.etf.rma.customKlase.ConnectionStateMonitor.CONNECTION_LOST;
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.AZURIRAJ_PITANJA;
 
-public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResultReceiver.Receiver {
+public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResultReceiver.Receiver, ConnectionStateMonitor.NetworkAwareActivity {
 
     private Context context;
     private EditText etNaziv;
@@ -42,6 +47,7 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
     private FirestoreResultReceiver receiver;
     // Firestore access token
     private String TOKEN;
+    private ConnectionStateMonitor connectionStateMonitor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +71,9 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
         final Intent intent = getIntent();
         TOKEN = intent.getStringExtra("token");
         novoPitanje = new Pitanje(null, null);
+
+        connectionStateMonitor = new ConnectionStateMonitor(this, (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE));
+        connectionStateMonitor.registerNetworkCallback();
 
         adapterOdgovori = (new ArrayAdapter<String>(this, R.layout.element_odgovora, R.id.odgovor, novoPitanje.getOdgovori()) {
             @SuppressWarnings("NullableProblems")
@@ -202,5 +211,19 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
         final Intent intent = new Intent();
         setResult(RESULT_CANCELED, intent);
         finish();
+    }
+
+    @Override
+    public void onNetworkLost() {
+        Log.wtf("DodajPitanjeAkt: ", "onNetworkLost");
+        Toast.makeText(context, "Connection lost!", Toast.LENGTH_SHORT).show();
+        setResult(CONNECTION_LOST, new Intent());
+        finish();
+    }
+
+    @Override
+    public void onNetworkAvailable() {
+        Log.wtf("DodajPitanjeAkt: ", "onNetworkAvailable");
+        Toast.makeText(context, "Connected!", Toast.LENGTH_SHORT).show();
     }
 }

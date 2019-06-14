@@ -3,25 +3,30 @@ package ba.unsa.etf.rma.aktivnosti;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.maltaisn.icondialog.Icon;
 import com.maltaisn.icondialog.IconDialog;
 
 import ba.unsa.etf.rma.R;
+import ba.unsa.etf.rma.customKlase.ConnectionStateMonitor;
 import ba.unsa.etf.rma.firestore.FirestoreIntentService;
 import ba.unsa.etf.rma.firestore.FirestoreResultReceiver;
 import ba.unsa.etf.rma.modeli.Kategorija;
 
+import static ba.unsa.etf.rma.customKlase.ConnectionStateMonitor.CONNECTION_LOST;
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.AZURIRAJ_KATEGORIJE;
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.VALIDNA_KATEGORIJA;
 
-public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.Callback, FirestoreResultReceiver.Receiver {
+public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.Callback, FirestoreResultReceiver.Receiver, ConnectionStateMonitor.NetworkAwareActivity {
 
     private Context context;
     private EditText etNaziv;
@@ -31,6 +36,7 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
     private FirestoreResultReceiver receiver;
     // Firestore access token
     private String TOKEN;
+    private ConnectionStateMonitor connectionStateMonitor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +57,9 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         final Intent intent = getIntent();
         final IconDialog iconDialog = new IconDialog();
         TOKEN = intent.getStringExtra("token");
+
+        connectionStateMonitor = new ConnectionStateMonitor(this, (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE));
+        connectionStateMonitor.registerNetworkCallback();
 
         btnDodajIkonu.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -132,5 +141,19 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         final Intent intent = new Intent();
         setResult(RESULT_CANCELED, intent);
         finish();
+    }
+
+    @Override
+    public void onNetworkLost() {
+        Log.wtf("DodajKategorijuAkt: ", "onNetworkLost");
+        Toast.makeText(context, "Connection lost!", Toast.LENGTH_SHORT).show();
+        setResult(CONNECTION_LOST, new Intent());
+        finish();
+    }
+
+    @Override
+    public void onNetworkAvailable() {
+        Log.wtf("DodajKategorijuAkt: ", "onNetworkAvailable");
+        Toast.makeText(context, "Connected!", Toast.LENGTH_SHORT).show();
     }
 }

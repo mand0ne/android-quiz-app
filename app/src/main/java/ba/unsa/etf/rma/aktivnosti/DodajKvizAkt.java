@@ -4,10 +4,12 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
@@ -15,10 +17,12 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
 import ba.unsa.etf.rma.R;
+import ba.unsa.etf.rma.customKlase.ConnectionStateMonitor;
 import ba.unsa.etf.rma.customKlase.CustomAdapter;
 import ba.unsa.etf.rma.customKlase.CustomSpinner;
 import ba.unsa.etf.rma.firestore.FirestoreIntentService;
@@ -28,13 +32,14 @@ import ba.unsa.etf.rma.modeli.Kviz;
 import ba.unsa.etf.rma.modeli.Pitanje;
 
 import static ba.unsa.etf.rma.aktivnosti.KvizoviAkt.PROMIJENI_KVIZ;
+import static ba.unsa.etf.rma.customKlase.ConnectionStateMonitor.CONNECTION_LOST;
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.AZURIRAJ_KVIZOVE;
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.DODAJ_KVIZ_AKT;
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.DOHVATI_KATEGORIJE;
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.DOHVATI_PITANJA;
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.VALIDAN_KVIZ;
 
-public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultReceiver.Receiver {
+public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultReceiver.Receiver, ConnectionStateMonitor.NetworkAwareActivity {
 
     static final int DODAJ_PITANJE = 40;
     static final int DODAJ_KATEGORIJU = 41;
@@ -59,6 +64,7 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
     private FirestoreResultReceiver receiver;
     // Firestore access token
     private String TOKEN;
+    private ConnectionStateMonitor connectionStateMonitor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +87,9 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
         spinnerKategorije.setAdapter(spinnerAdapter);
 
         adapterMogucaPitanja = new ArrayAdapter<>(this, R.layout.element_liste, R.id.naziv, mogucaPitanja);
+
+        connectionStateMonitor = new ConnectionStateMonitor(this, (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE));
+        connectionStateMonitor.registerNetworkCallback();
 
         firestoreRequest(DODAJ_KVIZ_AKT);
     }
@@ -313,6 +322,19 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
             } else
                 izbaciAlert("Kviz/Kategorija/Pitanje već postoji!");
         } */
+    }
+
+    @Override
+    public void onNetworkLost() {
+        Log.wtf("DodajKvizAkt: ", "onNetworkLost");
+        Toast.makeText(context, "Connection lost!", Toast.LENGTH_SHORT).show();
+        finish();
+    }
+
+    @Override
+    public void onNetworkAvailable() {
+        Log.wtf("DodajKvizAkt: ", "onNetworkAvailable");
+        Toast.makeText(context, "Connected!", Toast.LENGTH_SHORT).show();
     }
 
 

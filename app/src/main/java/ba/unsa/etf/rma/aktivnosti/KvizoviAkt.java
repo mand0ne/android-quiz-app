@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.CalendarContract;
@@ -16,6 +17,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,6 +26,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import ba.unsa.etf.rma.R;
+import ba.unsa.etf.rma.customKlase.ConnectionStateMonitor;
 import ba.unsa.etf.rma.customKlase.CustomAdapter;
 import ba.unsa.etf.rma.customKlase.CustomSpinner;
 import ba.unsa.etf.rma.firestore.FirestoreIntentService;
@@ -35,7 +38,7 @@ import ba.unsa.etf.rma.modeli.Kviz;
 
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.FILTRIRAJ_KVIZOVE;
 
-public class KvizoviAkt extends AppCompatActivity implements FirestoreResultReceiver.Receiver {
+public class KvizoviAkt extends AppCompatActivity implements FirestoreResultReceiver.Receiver, ConnectionStateMonitor.NetworkAwareActivity {
 
     static final int DODAJ_KVIZ = 30;
     static final int PROMIJENI_KVIZ = 31;
@@ -58,6 +61,8 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
     private FirestoreResultReceiver receiver;
     // Firestore access token
     private String TOKEN;
+    private ConnectionStateMonitor connectionStateMonitor;
+    private boolean connected = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +82,8 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
         if (TOKEN == null)
             TOKEN = getIntent().getStringExtra("token");
 
+        connectionStateMonitor = new ConnectionStateMonitor(this, (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE));
+        connectionStateMonitor.registerNetworkCallback();
         start();
     }
 
@@ -111,7 +118,10 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
             opcijaNoviKviz.setOnClickListener(new View.OnClickListener() {
                                                   @Override
                                                   public void onClick(View v) {
-                                                      dodajAzurirajKvizAktivnost(null);
+                                                      if (connected)
+                                                          dodajAzurirajKvizAktivnost(null);
+                                                      else
+                                                          izbaciAlertZaKonekciju();
                                                   }
                                               }
             );
@@ -120,7 +130,11 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
             opcijaNoviKviz.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    dodajAzurirajKvizAktivnost(null);
+                    if (connected)
+                        dodajAzurirajKvizAktivnost(null);
+                    else
+                        izbaciAlertZaKonekciju();
+
                     return true;
                 }
             });
@@ -130,8 +144,13 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
             listViewKvizovi.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
                 @Override
                 public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                    Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
-                    dodajAzurirajKvizAktivnost(kliknutiKviz);
+                    if (connected) {
+                        Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
+                        dodajAzurirajKvizAktivnost(kliknutiKviz);
+                    }
+                    else
+                        izbaciAlertZaKonekciju();
+
                     return true;
                 }
             });
@@ -142,9 +161,9 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
                     String event = postojiEvent(kliknutiKviz.getPitanja().size() * 30000);
-                    if (event == null)
+                    if (event == null) {
                         igrajKvizAktivnost(kliknutiKviz);
-                    else {
+                    } else {
                         new AlertDialog.Builder(context)
                                 .setTitle("Igranje kviza onemogućeno!")
                                 .setMessage(event)
@@ -161,11 +180,11 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
             spinnerKategorije.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    Log.wtf("SPINNER", "onItemSelected: ");
                     Kategorija selektovanaKategorija = (Kategorija) spinnerKategorije.getSelectedItem();
 
                     if (selektovanaKategorija != null) {
-                        findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
+                        if(connected)
+                            findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
                         intentServiceFiltriranje(selektovanaKategorija);
                     }
                 }
@@ -338,6 +357,11 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
     @Override
     public void onBackPressed() {
     }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        connectionStateMonitor.unregisterNetworkCallback();
+    }
 
     @Override
     public void onReceiveResult(int resultCode, Bundle resultData) {
@@ -350,5 +374,30 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
 
             findViewById(R.id.loadingPanel).setVisibility(View.INVISIBLE);
         }
+    }
+
+    private void izbaciAlertZaKonekciju(){
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this)
+                .setTitle("Onemogućeno!")
+                .setMessage("Niste povezani na internet!");
+
+        alertDialog.create();
+        alertDialog.show();
+    }
+
+    @Override
+    public void onNetworkLost() {
+        Log.wtf("KvizoviAkt: ", "onNetworkLost");
+        Toast.makeText(context, "Connection lost!", Toast.LENGTH_SHORT).show();
+        connected = false;
+    }
+
+    @Override
+    public void onNetworkAvailable() {
+        Log.wtf("KvizoviAkt: ", "onNetworkAvailable");
+        Toast.makeText(context, "Connected!", Toast.LENGTH_SHORT).show();
+        connected = true;
+        if(spinnerKategorije != null)
+            spinnerKategorije.setSelection(0);
     }
 }

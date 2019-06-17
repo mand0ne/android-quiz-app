@@ -8,7 +8,6 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ListView;
 
 import java.util.ArrayList;
@@ -34,7 +33,7 @@ public class ListaFrag extends Fragment {
         super.onCreate(savedInstanceState);
 
         assert getArguments() != null;
-        kategorije = new ArrayList<>(Objects.requireNonNull(getArguments().<Kategorija>getParcelableArrayList("kategorije")));
+        kategorije = new ArrayList<>(Objects.requireNonNull(getArguments().getParcelableArrayList("kategorije")));
     }
 
     @Override
@@ -60,13 +59,10 @@ public class ListaFrag extends Fragment {
 
         model = ViewModelProviders.of(getActivity()).get(KvizoviViewModel.class);
 
-        listaKategorija.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Objects.requireNonNull(getActivity())
-                        .findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
-                model.setKategorija((Kategorija) parent.getItemAtPosition(position));
-            }
+        listaKategorija.setOnItemClickListener((parent, view, position, id) -> {
+            Objects.requireNonNull(getActivity())
+                    .findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
+            model.setKategorija((Kategorija) parent.getItemAtPosition(position));
         });
 
         model.setKategorija((Kategorija) listaKategorija.getItemAtPosition(0));

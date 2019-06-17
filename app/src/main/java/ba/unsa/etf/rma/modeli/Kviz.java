@@ -19,17 +19,15 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         this.firestoreId = firestoreId;
     }
 
+    public Kviz(String naziv, Kategorija kategorija, String firestoreId){
+        this.naziv = naziv;
+        this.kategorija = kategorija;
+        this.firestoreId = firestoreId;
+    }
+
     public Kviz(String naziv, Kategorija kategorija) {
         this.naziv = naziv;
         this.kategorija = kategorija;
-        generisiFirestoreId();
-    }
-
-
-    public Kviz(String naziv, Kategorija kategorija, ArrayList<Pitanje> pitanja) {
-        this.naziv = naziv;
-        this.kategorija = kategorija;
-        this.pitanja = pitanja;
         generisiFirestoreId();
     }
 
@@ -57,20 +55,20 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
         this.kategorija = kategorija;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (getClass() != obj.getClass())
-            return false;
-
-        return this.naziv.equals(((Kviz) obj).naziv);
-    }
-
     private void generisiFirestoreId() {
         firestoreId = "QUIZ[" + UUID.randomUUID().toString().toUpperCase() + "]";
     }
 
     public String firestoreId() {
         return firestoreId;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (getClass() != obj.getClass())
+            return false;
+
+        return this.naziv.equals(((Kviz) obj).naziv);
     }
 
     @Override
@@ -82,7 +80,6 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
     public int compareTo(Kviz o) {
         return this.getNaziv().compareTo(o.getNaziv());
     }
-
 
     public Kviz(Parcel in) {
         this.naziv = in.readString();

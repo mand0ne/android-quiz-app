@@ -14,12 +14,12 @@ import java.util.Objects;
 
 import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.customKlase.RangListaAdapter;
-import ba.unsa.etf.rma.modeli.IgraPair;
+import ba.unsa.etf.rma.modeli.Igrac;
 
 public class RangLista extends Fragment {
 
     private ListView rangLista;
-    private ArrayList<IgraPair> rangPairs;
+    private ArrayList<Igrac> rangPairs;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

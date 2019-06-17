@@ -15,14 +15,14 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 
 import ba.unsa.etf.rma.R;
-import ba.unsa.etf.rma.modeli.IgraPair;
+import ba.unsa.etf.rma.modeli.Igrac;
 
-public class RangListaAdapter extends ArrayAdapter<IgraPair> {
+public class RangListaAdapter extends ArrayAdapter<Igrac> {
 
     private Context context;
-    private ArrayList<IgraPair> list;
+    private ArrayList<Igrac> list;
 
-    public RangListaAdapter(@NonNull Context context, ArrayList<IgraPair> list) {
+    public RangListaAdapter(@NonNull Context context, ArrayList<Igrac> list) {
         super(context, 0, list);
         this.context = context;
         this.list = list;
@@ -43,9 +43,9 @@ public class RangListaAdapter extends ArrayAdapter<IgraPair> {
             listItem = LayoutInflater.from(context).inflate(R.layout.element_rang_liste, parent, false);
 
         ((TextView) listItem.findViewById(R.id.pozicija)).setText((position + 1) + ".\t");
-        ((TextView) listItem.findViewById(R.id.igrac)).setText(list.get(position).first() + "\t");
+        ((TextView) listItem.findViewById(R.id.igrac)).setText(list.get(position).nickname() + "\t");
 
-        BigDecimal bd = new BigDecimal(list.get(position).second());
+        BigDecimal bd = new BigDecimal(list.get(position).score());
         bd = bd.setScale(2, RoundingMode.HALF_UP);
 
         ((TextView) listItem.findViewById(R.id.skor)).setText(String.valueOf(bd.doubleValue()));

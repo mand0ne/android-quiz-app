@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.net.ConnectivityManager;
-import android.net.Network;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -16,7 +15,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -33,6 +31,7 @@ import ba.unsa.etf.rma.modeli.Pitanje;
 
 import static ba.unsa.etf.rma.customKlase.ConnectionStateMonitor.CONNECTION_LOST;
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.AZURIRAJ_PITANJA;
+import static ba.unsa.etf.rma.firestore.FirestoreIntentService.VALIDNO_PITANJE;
 
 public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResultReceiver.Receiver, ConnectionStateMonitor.NetworkAwareActivity {
 
@@ -92,88 +91,76 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
 
         lvOdgovori.setAdapter(adapterOdgovori);
 
-
-        btnDodajOdgovor.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (etOdgovor.getText().length() != 0) {
-                    String odgovor = etOdgovor.getText().toString();
-                    if (novoPitanje.nePostojiOdgovor(odgovor)) {
-                        novoPitanje.dodajOdgovor(odgovor);
-                        adapterOdgovori.notifyDataSetChanged();
-                        etOdgovor.setText("");
-                    } else
-                        Toast.makeText(DodajPitanjeAkt.this, "Odgovor već postoji!", Toast.LENGTH_LONG).show();
+        btnDodajOdgovor.setOnClickListener(v -> {
+            if (etOdgovor.getText().length() != 0) {
+                String odgovor = etOdgovor.getText().toString();
+                if (novoPitanje.nePostojiOdgovor(odgovor)) {
+                    novoPitanje.dodajOdgovor(odgovor);
+                    adapterOdgovori.notifyDataSetChanged();
+                    etOdgovor.setText("");
                 } else
-                    etOdgovor.setError("Unesite odgovor!");
-            }
+                    Toast.makeText(DodajPitanjeAkt.this, "Odgovor već postoji!", Toast.LENGTH_LONG).show();
+            } else
+                etOdgovor.setError("Unesite odgovor!");
         });
 
-        btnDodajTacan.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (etOdgovor.getText().length() != 0) {
-                    String odgovor = etOdgovor.getText().toString();
-                    if (novoPitanje.nePostojiOdgovor(odgovor)) {
-                        novoPitanje.dodajOdgovor(odgovor);
-                        novoPitanje.setTacan(odgovor);
+        btnDodajTacan.setOnClickListener(v -> {
+            if (etOdgovor.getText().length() != 0) {
+                String odgovor = etOdgovor.getText().toString();
+                if (novoPitanje.nePostojiOdgovor(odgovor)) {
+                    novoPitanje.dodajOdgovor(odgovor);
+                    novoPitanje.setTacan(odgovor);
 
-                        btnDodajTacan.setEnabled(false);
-                        btnDodajTacan.getBackground().setColorFilter(0xFFB79D9D, PorterDuff.Mode.MULTIPLY);
+                    btnDodajTacan.setEnabled(false);
+                    btnDodajTacan.getBackground().setColorFilter(0xFFB79D9D, PorterDuff.Mode.MULTIPLY);
 
-                        adapterOdgovori.notifyDataSetChanged();
-                        etOdgovor.setText("");
-                    } else
-                        Toast.makeText(DodajPitanjeAkt.this, "Odgovor već postoji!", Toast.LENGTH_LONG).show();
+                    adapterOdgovori.notifyDataSetChanged();
+                    etOdgovor.setText("");
                 } else
-                    etOdgovor.setError("Unesite odgovor!");
-            }
+                    Toast.makeText(DodajPitanjeAkt.this, "Odgovor već postoji!", Toast.LENGTH_LONG).show();
+            } else
+                etOdgovor.setError("Unesite odgovor!");
         });
 
-        lvOdgovori.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String obrisani = novoPitanje.getOdgovori().remove(position);
+        lvOdgovori.setOnItemClickListener((parent, view, position, id) -> {
+            String obrisani = novoPitanje.getOdgovori().remove(position);
 
-                if (obrisani.equals(novoPitanje.getTacan())) {
-                    novoPitanje.setTacan(null);
-                    btnDodajTacan.setEnabled(true);
-                    btnDodajTacan.getBackground().clearColorFilter();
-                }
-
-                adapterOdgovori.notifyDataSetChanged();
+            if (obrisani.equals(novoPitanje.getTacan())) {
+                novoPitanje.setTacan(null);
+                btnDodajTacan.setEnabled(true);
+                btnDodajTacan.getBackground().clearColorFilter();
             }
+
+            adapterOdgovori.notifyDataSetChanged();
         });
 
-        btnDodajPitanje.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (etNaziv.getText().length() == 0)
-                    etNaziv.setError("Unesite ime pitanja!");
-                else if (novoPitanje.getTacan() == null)
-                    etOdgovor.setError("Potrebno je unijeti bar jedan, tačan odgovor!");
-                else
-                    firestoreRequest();
-            }
+        btnDodajPitanje.setOnClickListener(v -> {
+            if (etNaziv.getText().length() == 0)
+                etNaziv.setError("Unesite ime pitanja!");
+            else if (novoPitanje.getTacan() == null)
+                etOdgovor.setError("Potrebno je unijeti bar jedan, tačan odgovor!");
+            else
+                firestoreRequest();
         });
     }
 
-    private void firestoreRequest() {
-        final Intent intent = new Intent(Intent.ACTION_SYNC, null, DodajPitanjeAkt.this, FirestoreIntentService.class);
+    private Intent kreirajFirestoreIntent(int request) {
+        Intent intent = new Intent(Intent.ACTION_SYNC, null, context, FirestoreIntentService.class);
         intent.putExtra("receiver", receiver);
         intent.putExtra("token", TOKEN);
+        intent.putExtra("request", request);
+        return intent;
+    }
 
-        intent.putExtra("request", FirestoreIntentService.VALIDNO_PITANJE);
+    private void firestoreRequest() {
+        Intent intent = kreirajFirestoreIntent(VALIDNO_PITANJE);
         String nazivPitanja = etNaziv.getText().toString();
         intent.putExtra("nazivPitanja", nazivPitanja);
         startService(intent);
     }
 
     void azurirajPitanjeDokumentFirestore(Pitanje novoPitanje) {
-        final Intent intent = new Intent(Intent.ACTION_SEND, null, context, FirestoreIntentService.class);
-        intent.putExtra("receiver", receiver);
-        intent.putExtra("token", TOKEN);
-        intent.putExtra("request", AZURIRAJ_PITANJA);
+        final Intent intent = kreirajFirestoreIntent(AZURIRAJ_PITANJA);
         intent.putExtra("pitanje", novoPitanje);
         startService(intent);
     }
@@ -210,6 +197,7 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
     public void onBackPressed() {
         final Intent intent = new Intent();
         setResult(RESULT_CANCELED, intent);
+        connectionStateMonitor.unregisterNetworkCallback();
         finish();
     }
 
@@ -218,6 +206,7 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
         Log.wtf("DodajPitanjeAkt: ", "onNetworkLost");
         Toast.makeText(context, "Connection lost!", Toast.LENGTH_SHORT).show();
         setResult(CONNECTION_LOST, new Intent());
+        connectionStateMonitor.unregisterNetworkCallback();
         finish();
     }
 
@@ -225,5 +214,11 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
     public void onNetworkAvailable() {
         Log.wtf("DodajPitanjeAkt: ", "onNetworkAvailable");
         Toast.makeText(context, "Connected!", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        connectionStateMonitor.unregisterNetworkCallback();
+        super.onDestroy();
     }
 }

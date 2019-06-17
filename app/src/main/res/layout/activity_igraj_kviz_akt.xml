@@ -55,7 +55,7 @@
     </FrameLayout>
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/buttonZavrsi"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -63,7 +63,8 @@
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="16dp"
         android:backgroundTint="#2196F3"
-        android:text="Završi kviz"
+        android:onClick="zavrsiKviz"
+        android:text="@string/zavrsi_kviz"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
         android:textColor="#FFFFFF"
         android:textColorHint="#00FFFFFF"

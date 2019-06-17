@@ -8,14 +8,14 @@ import java.util.ArrayList;
 public class RangListaKviz implements Parcelable {
     private String nazivKviza;
     private String kvizFirestoreId;
-    private ArrayList<IgraPair> lista = new ArrayList<>();
+    private ArrayList<Igrac> lista = new ArrayList<>();
 
     public RangListaKviz(String nazivKviza, String kvizFirestoreId) {
         this.nazivKviza = nazivKviza;
         this.kvizFirestoreId = kvizFirestoreId;
     }
 
-    public RangListaKviz(String nazivKviza, String kvizFirestoreId, ArrayList<IgraPair> lista) {
+    public RangListaKviz(String nazivKviza, String kvizFirestoreId, ArrayList<Igrac> lista) {
         this.nazivKviza = nazivKviza;
         this.kvizFirestoreId = kvizFirestoreId;
         this.lista = lista;
@@ -37,18 +37,22 @@ public class RangListaKviz implements Parcelable {
         return "RANK[" + kvizFirestoreId + "]";
     }
 
-    public ArrayList<IgraPair> getLista() {
+    public String getKvizFirestoreId() {
+        return kvizFirestoreId;
+    }
+
+    public ArrayList<Igrac> getLista() {
         return lista;
     }
 
-    public void setLista(ArrayList<IgraPair> lista) {
+    public void setLista(ArrayList<Igrac> lista) {
         this.lista = lista;
     }
 
     public RangListaKviz(Parcel in) {
         this.nazivKviza = in.readString();
         this.kvizFirestoreId = in.readString();
-        this.lista = in.createTypedArrayList(IgraPair.CREATOR);
+        this.lista = in.createTypedArrayList(Igrac.CREATOR);
     }
 
     @Override

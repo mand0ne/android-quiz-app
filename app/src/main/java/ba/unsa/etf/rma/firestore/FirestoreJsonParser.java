@@ -1,16 +1,13 @@
 package ba.unsa.etf.rma.firestore;
 
-import android.util.Log;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 
-import ba.unsa.etf.rma.modeli.IgraPair;
+import ba.unsa.etf.rma.modeli.Igrac;
 import ba.unsa.etf.rma.modeli.Kategorija;
 import ba.unsa.etf.rma.modeli.Kviz;
 import ba.unsa.etf.rma.modeli.Pitanje;
@@ -48,12 +45,7 @@ class FirestoreJsonParser {
             e.printStackTrace();
         }
 
-        Collections.sort(listaKategorija, new Comparator<Kategorija>() {
-            @Override
-            public int compare(Kategorija o1, Kategorija o2) {
-                return o1.getNaziv().compareTo(o2.getNaziv());
-            }
-        });
+        Collections.sort(listaKategorija, (o1, o2) -> o1.getNaziv().compareTo(o2.getNaziv()));
         return listaKategorija;
     }
 
@@ -85,9 +77,12 @@ class FirestoreJsonParser {
             JSONArray dokumenti = dokumentObjekat.getJSONArray("documents");
 
             for (int i = 0; i < dokumenti.length(); i++) {
-                Pitanje novoPitanje = parsirajDokumentPitanje(dokumenti.getJSONObject(i));
-                if (novoPitanje != null)
-                    listaPitanja.add(novoPitanje);
+                try {
+                    Pitanje novoPitanje = parsirajDokumentPitanje(dokumenti.getJSONObject(i));
+                    if (novoPitanje != null)
+                        listaPitanja.add(novoPitanje);
+                } catch (Exception ignored) {
+                }
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -137,8 +132,11 @@ class FirestoreJsonParser {
                 if (filter)
                     jsonObjectKviz = jsonObjectKviz.getJSONObject("document");
 
-                Kviz noviKviz = parsirajDokumentKviz(jsonObjectKviz, kategorije, pitanja);
-                listaKvizova.add(noviKviz);
+                try {
+                    Kviz noviKviz = parsirajDokumentKviz(jsonObjectKviz, kategorije, pitanja);
+                    listaKvizova.add(noviKviz);
+                } catch (Exception ignored) {
+                }
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -196,7 +194,7 @@ class FirestoreJsonParser {
 
     RangListaKviz parsirajRangListu(String rangListaFirebase) {
         RangListaKviz rangLista = new RangListaKviz(null, null);
-        ArrayList<IgraPair> lista = new ArrayList<>();
+        ArrayList<Igrac> lista = new ArrayList<>();
 
         try {
             JSONObject dokumentObjekat = new JSONObject(rangListaFirebase);
@@ -216,7 +214,7 @@ class FirestoreJsonParser {
                     JSONObject igrac = rezultat.getJSONObject(imeIgraca);
                     final double skor = igrac.getDouble("doubleValue");
 
-                    lista.add(new IgraPair(imeIgraca, skor));
+                    lista.add(new Igrac(imeIgraca, skor));
                     pozicija++;
                 } catch (Exception e) {
                     loop = false;
@@ -228,7 +226,6 @@ class FirestoreJsonParser {
 
 
         rangLista.setLista(lista);
-        Log.wtf("KOLICINA:", String.valueOf(lista.size()));
         return rangLista;
     }
 }

@@ -18,14 +18,21 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.TreeSet;
 
-import ba.unsa.etf.rma.modeli.IgraPair;
+import ba.unsa.etf.rma.modeli.Igrac;
 import ba.unsa.etf.rma.modeli.Kategorija;
 import ba.unsa.etf.rma.modeli.Kviz;
 import ba.unsa.etf.rma.modeli.Pitanje;
 import ba.unsa.etf.rma.modeli.RangListaKviz;
+import ba.unsa.etf.rma.sqlite.AppDbHelper;
+import ba.unsa.etf.rma.sqlite.SQLiteIntentService;
+
+import static ba.unsa.etf.rma.sqlite.SQLiteIntentService.SINKRONIZUJ_RANG_LISTE;
 
 public class FirestoreIntentService extends IntentService {
+
     public enum TIP_ZAHTJEVA {
         GET("GET"), POST("POST"), PATCH("PATCH");
 
@@ -58,6 +65,8 @@ public class FirestoreIntentService extends IntentService {
     public static final int AZURIRAJ_PITANJA = 302;
     public static final int AZURIRAJ_RANG_LISTU = 303;
 
+    public static final int AZURIRAJ_LOKALNU_BAZU = 400;
+
     private static final String TAG = "FirestoreIntentService";
     private String databaseUrl =
             "https://firestore.googleapis.com/v1/projects/rma19mandalanel18088/databases/(default)/documents";
@@ -86,10 +95,9 @@ public class FirestoreIntentService extends IntentService {
                 try {
                     ArrayList<Kategorija> kategorije = dohvatiKategorije();
                     ArrayList<Pitanje> pitanja = dohvatiPitanja();
-                    String kvizFirebaseId = intent.getStringExtra("kvizFirebaseId");
-                    if (kvizFirebaseId != null) {
-                        Kviz trenutniKviz = dohvatiKviz(
-                                intent.getStringExtra("kvizFirebaseId"), kategorije, pitanja);
+                    String kvizFirestoreId = intent.getStringExtra("kvizFirestoreId");
+                    if (kvizFirestoreId != null) {
+                        Kviz trenutniKviz = dohvatiKviz(kvizFirestoreId, kategorije, pitanja);
                         bundle.putParcelable("trenutniKviz", trenutniKviz);
                     }
                     bundle.putParcelableArrayList("kategorije", kategorije);
@@ -118,8 +126,8 @@ public class FirestoreIntentService extends IntentService {
             case DOHVATI_RANG_LISTU:
                 try {
                     String nazivKviza = intent.getStringExtra("nazivKviza");
-                    String kvizFirebaseId = intent.getStringExtra("kvizFirebaseId");
-                    bundle.putParcelable("rangListaKviz", dohvatiRangListu(nazivKviza, kvizFirebaseId));
+                    String kvizFirestoreId = intent.getStringExtra("kvizFirestoreId");
+                    bundle.putParcelable("rangListaKviz", dohvatiRangListu(nazivKviza, kvizFirestoreId));
                     bundle.putString("nickname", intent.getStringExtra("nickname"));
                     bundle.putDouble("skor", intent.getDoubleExtra("skor", 0.0) * 100.0);
                     resultReceiver.send(DOHVATI_RANG_LISTU, bundle);
@@ -132,7 +140,7 @@ public class FirestoreIntentService extends IntentService {
                     ArrayList<Kategorija> kategorije = dohvatiKategorije();
                     bundle.putParcelableArrayList("kategorije", kategorije);
                     bundle.putParcelableArrayList("kvizovi",
-                            dohvatiSpecificneKvizove(kategorije, intent.getStringExtra("kategorijaFirebaseId")));
+                            dohvatiSpecificneKvizove(kategorije, intent.getStringExtra("kategorijaFirestoreId")));
                     resultReceiver.send(FILTRIRAJ_KVIZOVE, bundle);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -176,7 +184,9 @@ public class FirestoreIntentService extends IntentService {
 
                     if (!nazivKategorijeImport.contains("null-index:"))
                         validan = !postojiKategorija(nazivKategorijeImport);
+
                     validan = validan && !postojiKviz(nazivKvizaImport);
+
                     ArrayList<Pitanje> pitanjaImport = intent.getParcelableArrayListExtra("pitanjaImport");
                     for (Pitanje pitanje : pitanjaImport)
                         validan = validan && !postojiPitanje(pitanje.getNaziv());
@@ -184,7 +194,7 @@ public class FirestoreIntentService extends IntentService {
                     if (validan) {
                         bundle.putString("nazivKvizaImport", nazivKvizaImport);
                         bundle.putString("nazivKategorijeImport", nazivKategorijeImport);
-                        bundle.putParcelableArrayList("pitanja", pitanjaImport);
+                        bundle.putParcelableArrayList("pitanjaImport", pitanjaImport);
                     }
                     bundle.putBoolean("validanImport", validan);
                     resultReceiver.send(VALIDAN_IMPORT, bundle);
@@ -193,32 +203,47 @@ public class FirestoreIntentService extends IntentService {
                 }
             case AZURIRAJ_KATEGORIJE:
                 try {
-                    azurirajKategorije((Kategorija) intent.getParcelableExtra("kategorija"));
+                    azurirajKategorije(intent.getParcelableExtra("kategorija"));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 break;
             case AZURIRAJ_KVIZOVE:
                 try {
-                    azurirajKvizove((Kviz) intent.getParcelableExtra("kviz"));
+                    azurirajKvizove(intent.getParcelableExtra("kviz"));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 break;
             case AZURIRAJ_PITANJA:
                 try {
-                    azurirajPitanja((Pitanje) intent.getParcelableExtra("pitanje"));
+                    azurirajPitanja(intent.getParcelableExtra("pitanje"));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 break;
             case AZURIRAJ_RANG_LISTU:
                 try {
-                    azurirajRangListu((RangListaKviz) intent.getParcelableExtra("rangListaKviz"));
+                    azurirajRangListu(intent.getParcelableExtra("rangListaKviz"));
+                    AppDbHelper.getInstance(getApplicationContext()).azurirajRangListu(intent.getParcelableExtra("rangListaKviz"));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 break;
+            case AZURIRAJ_LOKALNU_BAZU:
+                try {
+                    azurirajLokalnuBazu();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
+            case SINKRONIZUJ_RANG_LISTE:
+                try {
+                    RangListaKviz rangListaKviz = intent.getParcelableExtra("rangListaKviz");
+                    sinkronizujRangLisu(rangListaKviz);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             default:
                 break;
         }
@@ -258,8 +283,8 @@ public class FirestoreIntentService extends IntentService {
     }
 
 
-    private Kviz dohvatiKviz(String kvizFirebaseId, ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja) throws Exception {
-        String connectionUrl = databaseUrl + "/Kvizovi/" + kvizFirebaseId + "?fields=fields%2Cname&access_token=";
+    private Kviz dohvatiKviz(String kvizFirestoreId, ArrayList<Kategorija> kategorije, ArrayList<Pitanje> pitanja) throws Exception {
+        String connectionUrl = databaseUrl + "/Kvizovi/" + kvizFirestoreId + "?fields=fields%2Cname&access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
         uspostaviVezu(TIP_ZAHTJEVA.GET);
@@ -301,8 +326,8 @@ public class FirestoreIntentService extends IntentService {
         return firestoreJsonParser.parsirajKvizove(listaKvizova, kategorije, pitanja);
     }
 
-    private ArrayList<Kviz> dohvatiSpecificneKvizove(ArrayList<Kategorija> kategorije, final String kategorijaFirebaseId) throws Exception {
-        if (kategorijaFirebaseId.equals("CAT[-ALL-]"))
+    private ArrayList<Kviz> dohvatiSpecificneKvizove(ArrayList<Kategorija> kategorije, final String kategorijaFirestoreId) throws Exception {
+        if (kategorijaFirestoreId.equals("CAT[-ALL-]"))
             return dohvatiKvizove(kategorije, dohvatiPitanja());
 
         String structuredQuery = "{\n" +
@@ -332,7 +357,7 @@ public class FirestoreIntentService extends IntentService {
                 "    },\n" +
                 "    \"op\": \"EQUAL\",\n" +
                 "    \"value\": {\n" +
-                "     \"stringValue\": \"" + kategorijaFirebaseId + "\"\n" +
+                "     \"stringValue\": \"" + kategorijaFirestoreId + "\"\n" +
                 "    }\n" +
                 "   }\n" +
                 "  },\n" +
@@ -356,8 +381,8 @@ public class FirestoreIntentService extends IntentService {
         return firestoreJsonParser.parsirajKvizove(listaKvizova, kategorije, dohvatiPitanja());
     }
 
-    private RangListaKviz dohvatiRangListu(String nazivKviza, String kvizFirebaseId) throws Exception {
-        String connectionUrl = databaseUrl + "/Rangliste/RANK[" + kvizFirebaseId + "]?fields=fields%2Cname&access_token=";
+    private RangListaKviz dohvatiRangListu(String nazivKviza, String kvizFirestoreId) throws Exception {
+        String connectionUrl = databaseUrl + "/Rangliste/RANK[" + kvizFirestoreId + "]?fields=fields%2Cname&access_token=";
 
         url = new URL(connectionUrl + URLEncoder.encode(token, "UTF-8"));
         uspostaviVezu(TIP_ZAHTJEVA.GET);
@@ -368,9 +393,9 @@ public class FirestoreIntentService extends IntentService {
             FirestoreJsonParser firestoreJsonParser = new FirestoreJsonParser(false);
             rangListaKviz = firestoreJsonParser.parsirajRangListu(rangListaJson);
             rangListaKviz.setNazivKviza(nazivKviza);
-            rangListaKviz.setKvizFirestoreId(kvizFirebaseId);
+            rangListaKviz.setKvizFirestoreId(kvizFirestoreId);
         } catch (FileNotFoundException e) {
-            rangListaKviz = new RangListaKviz(nazivKviza, kvizFirebaseId);
+            rangListaKviz = new RangListaKviz(nazivKviza, kvizFirestoreId);
         }
 
         return rangListaKviz;
@@ -623,14 +648,14 @@ public class FirestoreIntentService extends IntentService {
                 "   \"mapValue\": {\n" +
                 "    \"fields\": {\n");
 
-        ArrayList<IgraPair> pairs = rangListaKviz.getLista();
+        ArrayList<Igrac> pairs = rangListaKviz.getLista();
 
         for (int i = 0; i < pairs.size(); i++) {
             dokument.append("\"").append(i + 1).append("\": { \n");
             dokument.append("\"mapValue\": {\n");
             dokument.append("\"fields\": {\n");
-            dokument.append("\"").append(pairs.get(i).first()).append("\": {\n");
-            dokument.append("\"doubleValue\": ").append(pairs.get(i).second()).append("\n");
+            dokument.append("\"").append(pairs.get(i).nickname()).append("\": {\n");
+            dokument.append("\"doubleValue\": ").append(pairs.get(i).score()).append("\n");
             dokument.append("}\n}\n}\n}\n");
             if (i < pairs.size() - 1)
                 dokument.append(",");
@@ -644,6 +669,33 @@ public class FirestoreIntentService extends IntentService {
         }
 
         dajOdgovorServera();
+    }
+
+
+    private void azurirajLokalnuBazu() throws Exception {
+        ArrayList<Kategorija> kategorije = dohvatiKategorije();
+        ArrayList<Pitanje> pitanja = dohvatiPitanja();
+        ArrayList<Kviz> kvizovi = dohvatiKvizove(kategorije, pitanja);
+
+        final Intent intent = new Intent(Intent.ACTION_SYNC, null, getApplicationContext(), SQLiteIntentService.class);
+        intent.putExtra("request", SQLiteIntentService.AZURIRAJ_LOKALNU_BAZU);
+        intent.putParcelableArrayListExtra("kategorije", kategorije);
+        intent.putParcelableArrayListExtra("kvizovi", kvizovi);
+        intent.putParcelableArrayListExtra("pitanja", pitanja);
+
+        startService(intent);
+    }
+
+    private void sinkronizujRangLisu(RangListaKviz rangListaKviz) throws Exception {
+        RangListaKviz firestoreRangLista = dohvatiRangListu(rangListaKviz.getNazivKviza(), rangListaKviz.getKvizFirestoreId());
+
+        TreeSet<Igrac> lista = new TreeSet<>(firestoreRangLista.getLista());
+        lista.addAll(rangListaKviz.getLista());
+
+        ArrayList<Igrac> novaLista = new ArrayList<>(lista);
+        Collections.sort(novaLista, Collections.reverseOrder());
+        firestoreRangLista.setLista(novaLista);
+        azurirajRangListu(firestoreRangLista);
     }
 }
 

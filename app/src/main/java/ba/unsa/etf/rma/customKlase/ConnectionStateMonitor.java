@@ -47,7 +47,7 @@ public class ConnectionStateMonitor extends ConnectivityManager.NetworkCallback 
 
     @Override
     public void onAvailable(Network network) {
-        new checkIfOnline(networkAwareActivity).execute();
+        new CheckIfConnected(networkAwareActivity).execute();
     }
 
     @Override
@@ -55,10 +55,10 @@ public class ConnectionStateMonitor extends ConnectivityManager.NetworkCallback 
         networkAwareActivity.onNetworkLost();
     }
 
-    private static class checkIfOnline extends AsyncTask<String, Void, Boolean> {
+    private static class CheckIfConnected extends AsyncTask<String, Void, Boolean> {
         private WeakReference<NetworkAwareActivity> activityWeakReference;
 
-        checkIfOnline(NetworkAwareActivity networkAwareActivity) {
+        CheckIfConnected(NetworkAwareActivity networkAwareActivity) {
             this.activityWeakReference = new WeakReference<>(networkAwareActivity);
         }
 
@@ -85,7 +85,7 @@ public class ConnectionStateMonitor extends ConnectivityManager.NetworkCallback 
 
         @Override
         protected void onPostExecute(Boolean connected) {
-            if(connected)
+            if (connected)
                 activityWeakReference.get().onNetworkAvailable();
         }
     }

@@ -1,12 +1,10 @@
 package ba.unsa.etf.rma.aktivnosti;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.CalendarContract;
@@ -21,11 +19,6 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.common.collect.Lists;
-
-import java.io.InputStream;
-import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -36,13 +29,16 @@ import ba.unsa.etf.rma.R;
 import ba.unsa.etf.rma.customKlase.ConnectionStateMonitor;
 import ba.unsa.etf.rma.customKlase.CustomAdapter;
 import ba.unsa.etf.rma.customKlase.CustomSpinner;
+import ba.unsa.etf.rma.firestore.AccessToken;
 import ba.unsa.etf.rma.firestore.FirestoreIntentService;
 import ba.unsa.etf.rma.firestore.FirestoreResultReceiver;
 import ba.unsa.etf.rma.fragmenti.DetailFrag;
 import ba.unsa.etf.rma.fragmenti.ListaFrag;
 import ba.unsa.etf.rma.modeli.Kategorija;
 import ba.unsa.etf.rma.modeli.Kviz;
+import ba.unsa.etf.rma.sqlite.SQLiteIntentService;
 
+import static ba.unsa.etf.rma.firestore.FirestoreIntentService.AZURIRAJ_LOKALNU_BAZU;
 import static ba.unsa.etf.rma.firestore.FirestoreIntentService.FILTRIRAJ_KVIZOVE;
 
 public class KvizoviAkt extends AppCompatActivity implements FirestoreResultReceiver.Receiver, ConnectionStateMonitor.NetworkAwareActivity {
@@ -69,7 +65,7 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
     // Firestore access token
     private String TOKEN;
     private ConnectionStateMonitor connectionStateMonitor;
-    private boolean connected = false;
+    private boolean connected;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,17 +76,20 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
         receiver = new FirestoreResultReceiver(new Handler());
         receiver.setReceiver(this);
 
+        TOKEN = getIntent().getStringExtra("token");
+
         if (savedInstanceState != null) {
             kvizovi = savedInstanceState.getParcelableArrayList("kvizovi");
             kategorije = savedInstanceState.getParcelableArrayList("kategorije");
             TOKEN = savedInstanceState.getString("token");
         }
 
-        if (TOKEN == null)
-            TOKEN = getIntent().getStringExtra("token");
-
         connectionStateMonitor = new ConnectionStateMonitor(this, (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE));
         connectionStateMonitor.registerNetworkCallback();
+
+        if (getIntent().getBooleanExtra("restartDatabase", false))
+            context.deleteDatabase("QuizApp.db");
+
         start();
     }
 
@@ -122,65 +121,51 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
             inicijalizirajAdaptere();
 
             // Klik na zadnji element liste za dodavanje novog kviza
-            opcijaNoviKviz.setOnClickListener(new View.OnClickListener() {
-                                                  @Override
-                                                  public void onClick(View v) {
-                                                      if (connected)
-                                                          dodajAzurirajKvizAktivnost(null);
-                                                      else
-                                                          izbaciAlertZaKonekciju();
-                                                  }
-                                              }
-            );
+            opcijaNoviKviz.setOnClickListener(v -> {
+                if (connected)
+                    dodajAzurirajKvizAktivnost(null);
+                else
+                    izbaciAlertZaKonekciju();
+            });
 
             // Dugi klik na zadnji element liste za dodavanje novog kviza
-            opcijaNoviKviz.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    if (connected)
-                        dodajAzurirajKvizAktivnost(null);
-                    else
-                        izbaciAlertZaKonekciju();
+            opcijaNoviKviz.setOnLongClickListener(v -> {
+                if (connected)
+                    dodajAzurirajKvizAktivnost(null);
+                else
+                    izbaciAlertZaKonekciju();
 
-                    return true;
-                }
+                return true;
             });
 
 
             // Dugi klik na kviz za uredivanje
-            listViewKvizovi.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-                @Override
-                public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                    if (connected) {
-                        Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
-                        dodajAzurirajKvizAktivnost(kliknutiKviz);
-                    } else
-                        izbaciAlertZaKonekciju();
+            listViewKvizovi.setOnItemLongClickListener((parent, view, position, id) -> {
+                if (connected) {
+                    Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
+                    dodajAzurirajKvizAktivnost(kliknutiKviz);
+                } else
+                    izbaciAlertZaKonekciju();
 
-                    return true;
-                }
+                return true;
             });
 
             // Klik na kviz za igranje
-            listViewKvizovi.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
-                    String event = postojiEvent(kliknutiKviz.getPitanja().size() * 30000);
-                    if (event == null) {
-                        igrajKvizAktivnost(kliknutiKviz);
-                    } else {
-                        new AlertDialog.Builder(context)
-                                .setTitle("Igranje kviza onemogućeno!")
-                                .setMessage(event)
-                                .setCancelable(false)
-                                .setPositiveButton(android.R.string.ok, null)
-                                .setIcon(android.R.drawable.ic_dialog_info)
-                                .show();
-                    }
+            listViewKvizovi.setOnItemClickListener((parent, view, position, id) -> {
+                Kviz kliknutiKviz = (Kviz) parent.getItemAtPosition(position);
+                String event = postojiEvent(kliknutiKviz.getPitanja().size() * 30000);
+                if (event == null) {
+                    igrajKvizAktivnost(kliknutiKviz);
+                } else {
+                    new AlertDialog.Builder(context)
+                            .setTitle("Igranje kviza onemogućeno!")
+                            .setMessage(event)
+                            .setCancelable(false)
+                            .setPositiveButton(android.R.string.ok, null)
+                            .setIcon(android.R.drawable.ic_dialog_info)
+                            .show();
                 }
             });
-
 
             // Filtriranje kvizova
             spinnerKategorije.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -189,8 +174,7 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
                     Kategorija selektovanaKategorija = (Kategorija) spinnerKategorije.getSelectedItem();
 
                     if (selektovanaKategorija != null) {
-                        if (connected)
-                            findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
+                        findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
                         intentServiceFiltriranje(selektovanaKategorija);
                     }
                 }
@@ -212,6 +196,59 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
             spinnerKategorije.setSelection(0);
         else
             listaFrag.refreshujSpinner();
+
+        // Takodjer, sinkronizujemo SQLite i Firestore
+        if (connected)
+            azurirajLokalnuBazu();
+    }
+
+    @Override
+    public void onBackPressed() {
+        connectionStateMonitor.unregisterNetworkCallback();
+    }
+
+    // U slucaju privremenog destroy-a, recimo rotacija ekrana
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList("kvizovi", kvizovi);
+        outState.putParcelableArrayList("kategorije", kategorije);
+        outState.putString("token", TOKEN);
+
+        // Call superclass to save any view hierarchy
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onDestroy() {
+        connectionStateMonitor.unregisterNetworkCallback();
+        super.onDestroy();
+    }
+
+    private void inicijalizirajAdaptere() {
+        listViewAdapter = new CustomAdapter(context, kvizovi);
+        listViewKvizovi.setAdapter(listViewAdapter);
+        listViewKvizovi.addFooterView(opcijaNoviKviz = listViewAdapter.getFooterView(listViewKvizovi, "Dodaj kviz"));
+
+        spinnerAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, kategorije);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerKategorije.setAdapter(spinnerAdapter);
+    }
+
+    // Pokretanje novih aktivnosti
+    public void dodajAzurirajKvizAktivnost(Kviz kviz) {
+        final Intent intent = new Intent(context, DodajKvizAkt.class);
+        intent.putExtra("token", TOKEN);
+
+        final int activity;
+
+        if (kviz != null) {
+            activity = PROMIJENI_KVIZ;
+            intent.putExtra("kvizFirestoreId", kviz.firestoreId());
+        } else
+            activity = DODAJ_KVIZ;
+
+        intent.putExtra("activity", activity);
+        startActivity(intent);
     }
 
     private String postojiEvent(long vrijemeIgranjaKviza) {
@@ -278,39 +315,16 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
         }
     }
 
-    private void inicijalizirajAdaptere() {
-        listViewAdapter = new CustomAdapter(context, kvizovi);
-        listViewKvizovi.setAdapter(listViewAdapter);
-        listViewKvizovi.addFooterView(opcijaNoviKviz = listViewAdapter.getFooterView(listViewKvizovi, "Dodaj kviz"));
-
-        spinnerAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, kategorije);
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerKategorije.setAdapter(spinnerAdapter);
-    }
-
-    public void dodajAzurirajKvizAktivnost(Kviz kviz) {
-        final Intent intent = new Intent(context, DodajKvizAkt.class);
-        intent.putExtra("token", TOKEN);
-
-        final int activity;
-
-        if (kviz != null) {
-            activity = PROMIJENI_KVIZ;
-            intent.putExtra("kvizFirebaseId", kviz.firestoreId());
-        } else
-            activity = DODAJ_KVIZ;
-
-        intent.putExtra("activity", activity);
-        startActivity(intent);
-    }
-
     public void igrajKvizAktivnost(Kviz kliknutiKviz) {
         Intent intent = new Intent(context, IgrajKvizAkt.class);
         intent.putExtra("token", TOKEN);
         intent.putExtra("kviz", kliknutiKviz);
+        intent.putExtra("connected", Boolean.valueOf(connected));
         startActivity(intent);
     }
 
+
+    // Azuriranje/Filtriranje
     public void azurirajKategorije(ArrayList<Kategorija> noveKategorije, boolean jeNormalniLayout) {
         kategorije.clear();
         kategorije.add(new Kategorija("Svi", -1));
@@ -332,43 +346,20 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
             detailFrag.azurirajKvizove(kvizovi);
     }
 
-    public String getTOKEN() {
-        return TOKEN;
-    }
-
-    public FirestoreResultReceiver getReceiver() {
-        return receiver;
-    }
-
     public void intentServiceFiltriranje(Kategorija kategorija) {
-        final Intent intent = new Intent(Intent.ACTION_SYNC, null, context, FirestoreIntentService.class);
+        final Intent intent;
+        if (connected && TOKEN != null)
+            intent = new Intent(Intent.ACTION_SYNC, null, context, FirestoreIntentService.class);
+        else
+            intent = new Intent(Intent.ACTION_SYNC, null, context, SQLiteIntentService.class);
+
         intent.putExtra("receiver", receiver);
         intent.putExtra("token", TOKEN);
         intent.putExtra("request", FILTRIRAJ_KVIZOVE);
-        intent.putExtra("kategorijaFirebaseId", kategorija.firestoreId());
+        intent.putExtra("kategorijaFirestoreId", kategorija.firestoreId());
         startService(intent);
     }
 
-    // U slucaju privremenog destroy-a, recimo rotacija ekrana
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putParcelableArrayList("kvizovi", kvizovi);
-        outState.putParcelableArrayList("kategorije", kategorije);
-        outState.putString("token", TOKEN);
-
-        // Call superclass to save any view hierarchy
-        super.onSaveInstanceState(outState);
-    }
-
-    @Override
-    public void onBackPressed() {
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        connectionStateMonitor.unregisterNetworkCallback();
-    }
 
     @Override
     public void onReceiveResult(int resultCode, Bundle resultData) {
@@ -378,7 +369,6 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
 
             azurirajKategorije(noveKategorije, dpwidth < 550);
             azurirajKvizove(noviKvizovi, dpwidth < 500);
-
             findViewById(R.id.loadingPanel).setVisibility(View.INVISIBLE);
         }
     }
@@ -396,57 +386,37 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
     public void onNetworkLost() {
         Log.wtf("KvizoviAkt: ", "onNetworkLost");
         Toast.makeText(context, "Connection lost!", Toast.LENGTH_SHORT).show();
+
         connected = false;
     }
+
 
     @Override
     public void onNetworkAvailable() {
         if (TOKEN == null || TOKEN.isEmpty())
             try {
-                new getAccessToken(this).execute().get();
+                TOKEN = new AccessToken(this).execute().get();     // Moramo pricekati, sta ces..
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
         Log.wtf("KvizoviAkt: ", "onNetworkAvailable");
-        Toast.makeText(context, "Connected!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Connected! KvizoviAkt!", Toast.LENGTH_SHORT).show();
+
         connected = true;
-        if (spinnerKategorije != null)
+
+        if (dpwidth < 550)
             spinnerKategorije.setSelection(0);
+        else
+            listaFrag.refreshujSpinner();
+
+        azurirajLokalnuBazu();
     }
 
-
-    private static class getAccessToken extends AsyncTask<String, Void, Boolean> {
-        private WeakReference<Activity> activityWeakReference;
-        private String TAG = getClass().getSimpleName();
-
-        getAccessToken(Activity activityWeakReference) {
-            this.activityWeakReference = new WeakReference<>(activityWeakReference);
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            KvizoviAkt mainActivity = (KvizoviAkt) activityWeakReference.get();
-            if (mainActivity == null || mainActivity.isFinishing())
-                this.cancel(true);
-        }
-
-        protected Boolean doInBackground(String... params) {
-            try {
-                KvizoviAkt kvizoviAkt = (KvizoviAkt) activityWeakReference.get();
-                InputStream is = kvizoviAkt.context.getResources().openRawResource(R.raw.secret);
-                GoogleCredential credentials = GoogleCredential.fromStream(is)
-                        .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/datastore"));
-                credentials.refreshToken();
-                kvizoviAkt.TOKEN = credentials.getAccessToken();
-                Log.d(TAG, "TOKEN: " + kvizoviAkt.TOKEN);
-                return true;
-            } catch (Exception e) {
-                Log.d(TAG, "doInBackground: " + e.getMessage());
-                return false;
-            }
-        }
+    private void azurirajLokalnuBazu() {
+        final Intent intent = new Intent(Intent.ACTION_SYNC, null, context, FirestoreIntentService.class);
+        intent.putExtra("token", TOKEN);
+        intent.putExtra("request", AZURIRAJ_LOKALNU_BAZU);
+        startService(intent);
     }
 }

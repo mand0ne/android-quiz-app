@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -61,24 +60,18 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         connectionStateMonitor = new ConnectionStateMonitor(this, (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE));
         connectionStateMonitor.registerNetworkCallback();
 
-        btnDodajIkonu.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                iconDialog.setSelectedIcons(selectedIcons);
-                iconDialog.show(getSupportFragmentManager(), "icon_dialog");
-            }
+        btnDodajIkonu.setOnClickListener(v -> {
+            iconDialog.setSelectedIcons(selectedIcons);
+            iconDialog.show(getSupportFragmentManager(), "icon_dialog");
         });
 
-        btnDodajKategoriju.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (etNaziv.getText().toString().length() == 0)
-                    etNaziv.setError("Unesite naziv kategorije!");
-                else if (etIkona.getText().toString().length() == 0)
-                    etIkona.setError("Izaberite ikonu!");
-                else
-                    firestoreRequest();
-            }
+        btnDodajKategoriju.setOnClickListener(v -> {
+            if (etNaziv.getText().toString().length() == 0)
+                etNaziv.setError("Unesite naziv kategorije!");
+            else if (etIkona.getText().toString().length() == 0)
+                etIkona.setError("Izaberite ikonu!");
+            else
+                firestoreRequest();
         });
     }
 
@@ -88,22 +81,23 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         etIkona.setText(String.valueOf(selectedIcons[0].getId()));
     }
 
-    private void firestoreRequest() {
-        final Intent intent = new Intent(Intent.ACTION_SYNC, null, DodajKategorijuAkt.this, FirestoreIntentService.class);
+    private Intent kreirajFirestoreIntent(int request) {
+        Intent intent = new Intent(Intent.ACTION_SYNC, null, context, FirestoreIntentService.class);
         intent.putExtra("receiver", receiver);
         intent.putExtra("token", TOKEN);
+        intent.putExtra("request", request);
+        return intent;
+    }
 
-        intent.putExtra("request", FirestoreIntentService.VALIDNA_KATEGORIJA);
+    private void firestoreRequest() {
+        final Intent intent = kreirajFirestoreIntent(VALIDNA_KATEGORIJA);
         String uneseniNaziv = etNaziv.getText().toString();
         intent.putExtra("nazivKategorije", uneseniNaziv);
         startService(intent);
     }
 
     private void azurirajKategorijaDokumentFirestore(Kategorija kategorija) {
-        final Intent intent = new Intent(Intent.ACTION_SEND, null, context, FirestoreIntentService.class);
-        intent.putExtra("receiver", receiver);
-        intent.putExtra("token", TOKEN);
-        intent.putExtra("request", AZURIRAJ_KATEGORIJE);
+        final Intent intent = kreirajFirestoreIntent(AZURIRAJ_KATEGORIJE);
         intent.putExtra("kategorija", kategorija);
         startService(intent);
     }
@@ -137,9 +131,16 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
     }
 
     @Override
+    protected void onDestroy() {
+        connectionStateMonitor.unregisterNetworkCallback();
+        super.onDestroy();
+    }
+
+    @Override
     public void onBackPressed() {
         final Intent intent = new Intent();
         setResult(RESULT_CANCELED, intent);
+        connectionStateMonitor.unregisterNetworkCallback();
         finish();
     }
 
@@ -148,6 +149,7 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         Log.wtf("DodajKategorijuAkt: ", "onNetworkLost");
         Toast.makeText(context, "Connection lost!", Toast.LENGTH_SHORT).show();
         setResult(CONNECTION_LOST, new Intent());
+        connectionStateMonitor.unregisterNetworkCallback();
         finish();
     }
 

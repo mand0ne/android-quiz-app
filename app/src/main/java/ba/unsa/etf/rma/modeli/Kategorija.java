@@ -34,10 +34,6 @@ public class Kategorija implements Parcelable {
         return idIkonice;
     }
 
-    public void setIdIkonice(int id) {
-        this.idIkonice = id;
-    }
-
     private void generisiFirestoreId() {
         if (naziv.equals("Svi") && idIkonice == -1)
             firestoreId = "CAT[-ALL-]";
@@ -56,16 +52,16 @@ public class Kategorija implements Parcelable {
     }
 
     @Override
-    public int hashCode() {
-        return (idIkonice + naziv).hashCode();
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (getClass() != obj.getClass())
             return false;
 
         return this.naziv.equals(((Kategorija) obj).naziv) && this.idIkonice == ((Kategorija) obj).idIkonice;
+    }
+
+    @Override
+    public int hashCode() {
+        return (idIkonice + naziv).hashCode();
     }
 
     public Kategorija(Parcel in) {

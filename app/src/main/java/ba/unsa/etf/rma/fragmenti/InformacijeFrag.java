@@ -1,7 +1,6 @@
 package ba.unsa.etf.rma.fragmenti;
 
 import android.annotation.SuppressLint;
-import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -90,21 +89,26 @@ public class InformacijeFrag extends Fragment {
 
             ((IgrajKvizAkt) Objects.requireNonNull(getActivity())).postaviAlarm(timeLeftInMilis);
             model = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(IgraViewModel.class);
-            model.getOdgovor().observe(getViewLifecycleOwner(), new Observer<Boolean>() {
-                @Override
-                public void onChanged(@Nullable Boolean odgovor) {
-                    assert odgovor != null;
-                    if (odgovor)
-                        brojTacnihPitanja++;
+            model.getOdgovor().observe(getViewLifecycleOwner(), odgovor -> {
+                assert odgovor != null;
+                if (odgovor)
+                    brojTacnihPitanja++;
 
-                    procenatTacnih = (double) brojTacnihPitanja / (trenutniKviz.getPitanja().size() - brojPreostalihPitanja);
-                    model.setSkor(procenatTacnih);
-                    azurirajBrojPreostalih(true);
+                procenatTacnih = (double) brojTacnihPitanja / (trenutniKviz.getPitanja().size() - brojPreostalihPitanja);
+                model.setSkor(procenatTacnih);
+                azurirajBrojPreostalih(true);
 
-                    azurirajSkor();
-                }
+                azurirajSkor();
             });
         }
+    }
+
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (countDownTimer != null)
+            countDownTimer.cancel();
     }
 
     private void azurirajVrijeme() {

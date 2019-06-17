@@ -45,6 +45,7 @@
             android:configChanges="orientation|screenSize" />
 
         <service android:name=".firestore.FirestoreIntentService" />
+        <service android:name=".sqlite.SQLiteIntentService" />
     </application>
 
 </manifest>

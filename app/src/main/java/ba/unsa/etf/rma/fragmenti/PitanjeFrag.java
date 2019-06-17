@@ -3,7 +3,6 @@ package ba.unsa.etf.rma.fragmenti;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.arch.lifecycle.ViewModelProviders;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -13,7 +12,6 @@ import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -77,6 +75,7 @@ public class PitanjeFrag extends Fragment {
             tekstPitanja.setText("Kviz je završen!");
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -108,46 +107,36 @@ public class PitanjeFrag extends Fragment {
         odgovoriPitanja.setAdapter(oAdapter);
         model = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(IgraViewModel.class);
 
-        odgovoriPitanja.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(final AdapterView<?> parent, View view, final int position, long id) {
-                kliknutOdgovor = true;
-                odabraniOdgovor = (String) parent.getItemAtPosition(position);
+        odgovoriPitanja.setOnItemClickListener((parent, view, position, id) -> {
+            kliknutOdgovor = true;
+            odabraniOdgovor = (String) parent.getItemAtPosition(position);
 
-                if (odabraniOdgovor.equals(trenutnoPitanje.getTacan()))
-                    model.setOdgovor(true);
-                else
-                    model.setOdgovor(false);
+            if (odabraniOdgovor.equals(trenutnoPitanje.getTacan()))
+                model.setOdgovor(true);
+            else
+                model.setOdgovor(false);
 
-                odgovoriPitanja.invalidateViews();
+            odgovoriPitanja.invalidateViews();
 
-                if (pitanjaKviza.size() > 0) {
-                    new Handler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            odgovori.clear();
-                            trenutnoPitanje = pitanjaKviza.remove(new Random().nextInt(pitanjaKviza.size()));
-                            odgovori.addAll(trenutnoPitanje.dajRandomOdgovore());
-                            tekstPitanja.setText(trenutnoPitanje.getNaziv());
+            if (pitanjaKviza.size() > 0) {
+                new Handler().postDelayed(() -> {
+                    odgovori.clear();
+                    trenutnoPitanje = pitanjaKviza.remove(new Random().nextInt(pitanjaKviza.size()));
+                    odgovori.addAll(trenutnoPitanje.dajRandomOdgovore());
+                    tekstPitanja.setText(trenutnoPitanje.getNaziv());
 
-                            oAdapter.notifyDataSetChanged();
-                            kliknutOdgovor = false;
-                            odabraniOdgovor = "";
-                        }
-                    }, 2000);
-                } else {
-                    new Handler().postDelayed(new Runnable() {
-                        @SuppressLint("SetTextI18n")
-                        @Override
-                        public void run() {
-                            ((IgrajKvizAkt) Objects.requireNonNull(getActivity())).iskljuciAlarm();
-                            odgovori.clear();
-                            oAdapter.notifyDataSetChanged();
-                            tekstPitanja.setText("Kviz je završen!");
-                            unosRangLista();
-                        }
-                    }, 1100);
-                }
+                    oAdapter.notifyDataSetChanged();
+                    kliknutOdgovor = false;
+                    odabraniOdgovor = "";
+                }, 2000);
+            } else {
+                new Handler().postDelayed(() -> {
+                    ((IgrajKvizAkt) Objects.requireNonNull(getActivity())).iskljuciAlarm();
+                    odgovori.clear();
+                    oAdapter.notifyDataSetChanged();
+                    tekstPitanja.setText("Kviz je završen!");
+                    unosRangLista();
+                }, 1100);
             }
         });
     }
@@ -163,33 +152,24 @@ public class PitanjeFrag extends Fragment {
                 .setNegativeButton("Nazad", null)
                 .create();
 
-        alert.setOnShowListener(new DialogInterface.OnShowListener() {
-            @Override
-            public void onShow(final DialogInterface dialog) {
-                Button buttonOk = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_POSITIVE);
-                Button buttonCancel = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_NEGATIVE);
-                if (buttonOk != null) {
-                    buttonOk.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            if (input.getText() != null && !input.getText().toString().trim().isEmpty()) {
-                                dialog.cancel();
-                                ((IgrajKvizAkt) Objects.requireNonNull(getActivity()))
-                                        .dohvatiRangListuZaPrikaz(input.getText().toString(), model.getSkor().getValue());
-                            } else
-                                input.setError("Morate unijeti nickname!");
-                        }
-                    });
-                }
-                if (buttonCancel != null) {
-                    buttonCancel.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            dialog.cancel();
-                            Objects.requireNonNull(getActivity()).finish();
-                        }
-                    });
-                }
+        alert.setOnShowListener(dialog -> {
+            Button buttonOk = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_POSITIVE);
+            Button buttonCancel = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_NEGATIVE);
+            if (buttonOk != null) {
+                buttonOk.setOnClickListener(view -> {
+                    if (input.getText() != null && !input.getText().toString().trim().isEmpty()) {
+                        dialog.cancel();
+                        ((IgrajKvizAkt) Objects.requireNonNull(getActivity()))
+                                .dohvatiRangListuZaPrikaz(input.getText().toString(), model.getSkor().getValue());
+                    } else
+                        input.setError("Morate unijeti nickname!");
+                });
+            }
+            if (buttonCancel != null) {
+                buttonCancel.setOnClickListener(view -> {
+                    dialog.cancel();
+                    Objects.requireNonNull(getActivity()).finish();
+                });
             }
         });
 

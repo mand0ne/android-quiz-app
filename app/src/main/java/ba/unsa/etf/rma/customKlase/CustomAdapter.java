@@ -52,26 +52,23 @@ public class CustomAdapter extends ArrayAdapter<Object> {
             final ImageView image = listItem.findViewById(R.id.ikona);
             final IconHelper iconHelper = IconHelper.getInstance(context);
 
-            iconHelper.addLoadCallback(new IconHelper.LoadCallback() {
-                @Override
-                public void onDataLoaded() {
-                    switch (trenutniKviz.getKategorija().getIdIkonice()) {
-                        case -100:
-                            image.setImageResource(R.drawable.addico);
-                            break;
-                        case -1:
-                            image.setImageResource(R.drawable.quizico);
-                            break;
-                        case -2:
-                            break;
-                        case -3:
-                            image.setImageResource(R.drawable.undefinedquiz);
-                            break;
-                        default:
-                            image.setImageDrawable(iconHelper.
-                                    getIcon(trenutniKviz.getKategorija().getIdIkonice()).getDrawable(context));
-                            break;
-                    }
+            iconHelper.addLoadCallback(() -> {
+                switch (trenutniKviz.getKategorija().getIdIkonice()) {
+                    case -100:
+                        image.setImageResource(R.drawable.addico);
+                        break;
+                    case -1:
+                        image.setImageResource(R.drawable.quizico);
+                        break;
+                    case -2:
+                        break;
+                    case -3:
+                        image.setImageResource(R.drawable.undefinedquiz);
+                        break;
+                    default:
+                        image.setImageDrawable(iconHelper.
+                                getIcon(trenutniKviz.getKategorija().getIdIkonice()).getDrawable(context));
+                        break;
                 }
             });
 
@@ -84,26 +81,23 @@ public class CustomAdapter extends ArrayAdapter<Object> {
             final ImageView image = listItem.findViewById(R.id.ikona);
             final IconHelper iconHelper = IconHelper.getInstance(context);
 
-            iconHelper.addLoadCallback(new IconHelper.LoadCallback() {
-                @Override
-                public void onDataLoaded() {
-                    switch (kategorija.getIdIkonice()) {
-                        case -100:
-                            image.setImageResource(R.drawable.addico);
-                            break;
-                        case -1:
-                            image.setImageResource(R.drawable.quizico);
-                            break;
-                        case -3:
-                            image.setImageResource(R.drawable.undefinedquiz);
-                            break;
-                        case -2:
-                            break;
-                        default:
-                            image.setImageDrawable(iconHelper.
-                                    getIcon(kategorija.getIdIkonice()).getDrawable(context));
-                            break;
-                    }
+            iconHelper.addLoadCallback(() -> {
+                switch (kategorija.getIdIkonice()) {
+                    case -100:
+                        image.setImageResource(R.drawable.addico);
+                        break;
+                    case -1:
+                        image.setImageResource(R.drawable.quizico);
+                        break;
+                    case -3:
+                        image.setImageResource(R.drawable.undefinedquiz);
+                        break;
+                    case -2:
+                        break;
+                    default:
+                        image.setImageDrawable(iconHelper.
+                                getIcon(kategorija.getIdIkonice()).getDrawable(context));
+                        break;
                 }
             });
 

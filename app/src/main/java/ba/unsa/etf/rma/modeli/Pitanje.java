@@ -23,8 +23,12 @@ public class Pitanje implements Parcelable {
 
     public Pitanje(String naziv, String tacan, String firestoreId) {
         this.naziv = naziv;
-        odgovori.add(tacan);
-        this.tacan = tacan;
+
+        if (tacan != null) {
+            odgovori.add(tacan);
+            this.tacan = tacan;
+        }
+
         this.firestoreId = firestoreId;
     }
 

@@ -140,7 +140,6 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
     public void onBackPressed() {
         final Intent intent = new Intent();
         setResult(RESULT_CANCELED, intent);
-        connectionStateMonitor.unregisterNetworkCallback();
         finish();
     }
 
@@ -149,7 +148,6 @@ public class DodajKategorijuAkt extends AppCompatActivity implements IconDialog.
         Log.wtf("DodajKategorijuAkt: ", "onNetworkLost");
         Toast.makeText(context, "Connection lost!", Toast.LENGTH_SHORT).show();
         setResult(CONNECTION_LOST, new Intent());
-        connectionStateMonitor.unregisterNetworkCallback();
         finish();
     }
 

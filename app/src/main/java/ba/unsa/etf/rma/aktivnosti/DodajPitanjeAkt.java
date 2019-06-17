@@ -197,7 +197,6 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
     public void onBackPressed() {
         final Intent intent = new Intent();
         setResult(RESULT_CANCELED, intent);
-        connectionStateMonitor.unregisterNetworkCallback();
         finish();
     }
 
@@ -206,7 +205,6 @@ public class DodajPitanjeAkt extends AppCompatActivity implements FirestoreResul
         Log.wtf("DodajPitanjeAkt: ", "onNetworkLost");
         Toast.makeText(context, "Connection lost!", Toast.LENGTH_SHORT).show();
         setResult(CONNECTION_LOST, new Intent());
-        connectionStateMonitor.unregisterNetworkCallback();
         finish();
     }
 

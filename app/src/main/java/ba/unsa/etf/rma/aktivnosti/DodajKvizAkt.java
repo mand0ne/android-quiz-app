@@ -107,7 +107,6 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
 
     @Override
     public void onBackPressed() {
-        connectionStateMonitor.unregisterNetworkCallback();
         super.onBackPressed();
     }
 
@@ -244,7 +243,6 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
         Log.wtf("DodajKvizAkt: ", "onNetworkLost");
         Toast.makeText(context, "Connection lost!", Toast.LENGTH_SHORT).show();
 
-        connectionStateMonitor.unregisterNetworkCallback();
         finish();
     }
 
@@ -264,6 +262,7 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
                     dodanaPitanja.add(data.getParcelableExtra("novoPitanje"));
                     adapterDodanaPitanja.notifyDataSetChanged();
                 }
+                Log.wtf("POVRATAK PITAJNA", "onActivityResult: JEBOTE");
                 firestoreRequest(DOHVATI_PITANJA);
             } else if (requestCode == DODAJ_KATEGORIJU) {
                 if (resultCode == CONNECTION_LOST)

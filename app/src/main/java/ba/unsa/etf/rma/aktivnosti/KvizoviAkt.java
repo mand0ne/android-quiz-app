@@ -204,7 +204,6 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
 
     @Override
     public void onBackPressed() {
-        connectionStateMonitor.unregisterNetworkCallback();
     }
 
     // U slucaju privremenog destroy-a, recimo rotacija ekrana
@@ -386,7 +385,6 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
     public void onNetworkLost() {
         Log.wtf("KvizoviAkt: ", "onNetworkLost");
         Toast.makeText(context, "Connection lost!", Toast.LENGTH_SHORT).show();
-
         connected = false;
     }
 
@@ -401,7 +399,7 @@ public class KvizoviAkt extends AppCompatActivity implements FirestoreResultRece
             }
 
         Log.wtf("KvizoviAkt: ", "onNetworkAvailable");
-        Toast.makeText(context, "Connected! KvizoviAkt!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Connected!", Toast.LENGTH_SHORT).show();
 
         connected = true;
 

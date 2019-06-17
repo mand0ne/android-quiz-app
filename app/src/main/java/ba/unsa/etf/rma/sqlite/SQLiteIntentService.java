@@ -59,35 +59,32 @@ public class SQLiteIntentService extends IntentService {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-        else if (request == AZURIRAJ_LOKALNE_RANGLISTE){
-            try{
+        } else if (request == AZURIRAJ_LOKALNE_RANGLISTE) {
+            try {
                 AppDbHelper.getInstance(getApplicationContext()).azurirajRangListu(
                         intent.getParcelableExtra("rangListaKviz")
                 );
-            }catch(Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-        else if (request == DOHVATI_RANG_LISTU){
-            try{
+        } else if (request == DOHVATI_RANG_LISTU) {
+            try {
                 RangListaKviz rangListaKviz = AppDbHelper.getInstance(getApplicationContext()).dajRangListu(
                         intent.getStringExtra("kvizFirestoreId"));
                 bundle.putParcelable("rangListaKviz", rangListaKviz);
                 bundle.putString("nickname", intent.getStringExtra("nickname"));
                 bundle.putDouble("skor", intent.getDoubleExtra("skor", 0.0) * 100.0);
                 resultReceiver.send(DOHVATI_RANG_LISTU, bundle);
-            }catch(Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-        else if(request == SINKRONIZUJ_RANG_LISTE){
-            try{
+        } else if (request == SINKRONIZUJ_RANG_LISTE) {
+            try {
                 Kviz igraniKviz = intent.getParcelableExtra("igraniKviz");
                 RangListaKviz rangListaKviz = AppDbHelper.getInstance(getApplicationContext()).dajRangListu(igraniKviz.firestoreId());
                 bundle.putParcelable("rangListaKviz", rangListaKviz);
                 resultReceiver.send(SINKRONIZUJ_RANG_LISTE, bundle);
-            }catch(Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

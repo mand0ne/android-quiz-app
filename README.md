@@ -16,7 +16,7 @@ Some relevant features include:
   - Quiz timer
   - Ranking list
   
-The app uses Cloud Firestore to store relevant game informations (online mode) and SQLite (offline mode)
+The app uses **Cloud Firestore** to store relevant game informations (_online mode_) and **SQLite** (_offline mode_)
 
 
 <img src="screenshots/quizOverview.jpg" alt="Quiz overview" width="220"> <img src="screenshots/createCategory.jpg" alt="Creating a category" width="220"> <img src="screenshots/create-editQuiz.jpg" alt="Creating/Editing a quiz" width="220">

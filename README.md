@@ -3,7 +3,7 @@
 
 ---
 
-RMA - Quiz App is, in essence, an application for creating and playing quizzes.<br/>It that can be used by multiple users in parallel and can work in online and offline mode. 
+RMA - Quiz App is, in essence, an application for creating and playing quizzes.<br/>It can be used by multiple users in parallel and can work in online and offline mode. 
 
 Some relevant features include:
   - Create quiz category

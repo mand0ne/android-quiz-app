@@ -8,7 +8,7 @@ RMA - Quiz App is, in essence, an application for creating and playing quizzes.<
 Some relevant features include:
   - Create quiz category
   - Create/Edit quiz
-  - Create a quiz question
+  - Add a quiz question
   - Overview of all present categories, quizzes and questions
   - Import a quiz via CSV file
   - Online/Offline mode

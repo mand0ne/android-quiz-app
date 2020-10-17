@@ -6,7 +6,7 @@ import android.util.AttributeSet;
 import java.util.Objects;
 
 // Napravljen zbog "DodajKvizAkt" i kategorije "Dodaj kategoriju"
-public class CustomSpinner extends android.support.v7.widget.AppCompatSpinner {
+public class CustomSpinner extends androidx.appcompat.widget.AppCompatSpinner {
 
     public CustomSpinner(Context context) {
         super(context);

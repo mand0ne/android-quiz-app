@@ -17,7 +17,7 @@ import ba.unsa.etf.rma.modeli.Kviz;
 
 public class GridViewAdapter extends ArrayAdapter<Kviz> {
 
-    private Context context;
+    private final Context context;
 
     public GridViewAdapter(Context c, ArrayList<Kviz> kvizovi) {
         super(c, R.layout.element_grid_view, kvizovi);

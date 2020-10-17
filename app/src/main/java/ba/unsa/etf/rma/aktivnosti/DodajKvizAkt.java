@@ -8,8 +8,8 @@ import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -64,9 +64,9 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
     private ArrayAdapter<Pitanje> adapterMogucaPitanja;
     private ArrayAdapter<Kategorija> spinnerAdapter;
 
-    private ArrayList<Kategorija> kategorije = new ArrayList<>();
+    private final ArrayList<Kategorija> kategorije = new ArrayList<>();
     private ArrayList<Pitanje> dodanaPitanja = new ArrayList<>();
-    private ArrayList<Pitanje> mogucaPitanja = new ArrayList<>();
+    private final ArrayList<Pitanje> mogucaPitanja = new ArrayList<>();
 
     private Kviz trenutniKviz;
     private String originalnoImeTrenutnogKviza;
@@ -103,11 +103,6 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
         connectionStateMonitor.registerNetworkCallback();
 
         firestoreRequest(DODAJ_KVIZ_AKT);
-    }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
     }
 
     @Override
@@ -253,6 +248,7 @@ public class DodajKvizAkt extends AppCompatActivity implements FirestoreResultRe
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if (data != null) {
             if (requestCode == DODAJ_PITANJE) {
                 if (resultCode == CONNECTION_LOST)

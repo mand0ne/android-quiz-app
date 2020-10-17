@@ -2,8 +2,8 @@ package ba.unsa.etf.rma.customKlase;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,8 +19,8 @@ import ba.unsa.etf.rma.modeli.Igrac;
 
 public class RangListaAdapter extends ArrayAdapter<Igrac> {
 
-    private Context context;
-    private ArrayList<Igrac> list;
+    private final Context context;
+    private final ArrayList<Igrac> list;
 
     public RangListaAdapter(@NonNull Context context, ArrayList<Igrac> list) {
         super(context, 0, list);
@@ -45,7 +45,7 @@ public class RangListaAdapter extends ArrayAdapter<Igrac> {
         ((TextView) listItem.findViewById(R.id.pozicija)).setText((position + 1) + ".\t");
         ((TextView) listItem.findViewById(R.id.igrac)).setText(list.get(position).nickname() + "\t");
 
-        BigDecimal bd = new BigDecimal(list.get(position).score());
+        BigDecimal bd = BigDecimal.valueOf(list.get(position).score());
         bd = bd.setScale(2, RoundingMode.HALF_UP);
 
         ((TextView) listItem.findViewById(R.id.skor)).setText(String.valueOf(bd.doubleValue()));

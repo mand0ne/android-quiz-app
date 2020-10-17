@@ -5,6 +5,7 @@ import android.os.Parcelable;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.UUID;
 
 @SuppressWarnings("unused")
@@ -88,7 +89,7 @@ public class Pitanje implements Parcelable {
     }
 
     private void generisiFirestoreId() {
-        firestoreId = "QUES[" + UUID.randomUUID().toString().toUpperCase() + "]";
+        firestoreId = "QUES[" + UUID.randomUUID().toString().toUpperCase(Locale.getDefault()) + "]";
     }
 
     public String firestoreId() {

@@ -2,13 +2,13 @@ package ba.unsa.etf.rma.fragmenti;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.arch.lifecycle.ViewModelProviders;
+import androidx.lifecycle.ViewModelProviders;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.core.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,7 +35,7 @@ public class PitanjeFrag extends Fragment {
     private IgraViewModel model;
     private ArrayAdapter<String> oAdapter = null;
 
-    private ArrayList<Pitanje> pitanjaKviza = new ArrayList<>();
+    private final ArrayList<Pitanje> pitanjaKviza = new ArrayList<>();
     private Pitanje trenutnoPitanje = null;
     private ArrayList<String> odgovori = new ArrayList<>();
     private boolean kliknutOdgovor;
@@ -111,10 +111,7 @@ public class PitanjeFrag extends Fragment {
             kliknutOdgovor = true;
             odabraniOdgovor = (String) parent.getItemAtPosition(position);
 
-            if (odabraniOdgovor.equals(trenutnoPitanje.getTacan()))
-                model.setOdgovor(true);
-            else
-                model.setOdgovor(false);
+            model.setOdgovor(odabraniOdgovor.equals(trenutnoPitanje.getTacan()));
 
             odgovoriPitanja.invalidateViews();
 

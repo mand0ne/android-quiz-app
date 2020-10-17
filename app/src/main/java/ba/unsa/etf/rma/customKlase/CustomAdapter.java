@@ -1,8 +1,8 @@
 package ba.unsa.etf.rma.customKlase;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,8 +23,8 @@ import ba.unsa.etf.rma.modeli.Pitanje;
 
 public class CustomAdapter extends ArrayAdapter<Object> {
 
-    private Context context;
-    private ArrayList<?> list;
+    private final Context context;
+    private final ArrayList<?> list;
 
     @SuppressWarnings("unchecked")
     public CustomAdapter(@NonNull Context context, ArrayList<?> list) {

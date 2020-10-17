@@ -1,8 +1,8 @@
 package ba.unsa.etf.rma.customKlase;
 
-import android.arch.lifecycle.LiveData;
-import android.arch.lifecycle.MutableLiveData;
-import android.arch.lifecycle.ViewModel;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
 
 public class IgraViewModel extends ViewModel {
     private final MutableLiveData<Boolean> odgovor = new MutableLiveData<>();

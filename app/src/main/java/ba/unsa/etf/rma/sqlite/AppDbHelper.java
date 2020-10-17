@@ -5,7 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 
@@ -319,19 +319,22 @@ public class AppDbHelper extends SQLiteOpenHelper {
         String selectQuery = "SELECT * FROM " + RanglisteEntry.TABLE_NAME + " WHERE "
                 + RanglisteEntry.COLUMN_NAME_FIRESTORE_ID + " = 'RANK[" + kvizFirestoreId + "]'";
 
+        System.out.println("POZVAN DAJRANGLISTU " + kvizFirestoreId);
         try {
             Cursor cursor = sqLiteDatabase.rawQuery(selectQuery, null);
-
+            System.out.println("KURSOR? " + cursor);
             RangListaKviz rangListaKviz = null;
-            if (cursor.moveToFirst())
+            if (cursor.moveToFirst()) {
+                System.out.println("IMAN ESTOOOOOOOOOO");
                 rangListaKviz = new RangListaKviz(
                         cursor.getString(cursor.getColumnIndex(RanglisteEntry.COLUMN_NAME_NAZIV_KVIZA)),
                         kvizFirestoreId,
                         dajIgraceIzStringa(cursor.getString(cursor.getColumnIndex(RanglisteEntry.COLUMN_NAME_LISTA))));
-
+            }
             cursor.close();
             return rangListaKviz;
         } catch (Exception e) {
+            System.out.println("EXCEPTION!!!!!!");
             return null;
         }
     }

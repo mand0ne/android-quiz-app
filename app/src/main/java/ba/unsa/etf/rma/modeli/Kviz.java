@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.UUID;
 
 public class Kviz implements Comparable<Kviz>, Parcelable {
@@ -56,7 +57,7 @@ public class Kviz implements Comparable<Kviz>, Parcelable {
     }
 
     private void generisiFirestoreId() {
-        firestoreId = "QUIZ[" + UUID.randomUUID().toString().toUpperCase() + "]";
+        firestoreId = "QUIZ[" + UUID.randomUUID().toString().toUpperCase(Locale.getDefault()) + "]";
     }
 
     public String firestoreId() {

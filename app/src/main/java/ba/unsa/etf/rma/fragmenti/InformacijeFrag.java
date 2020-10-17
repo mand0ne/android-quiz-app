@@ -1,12 +1,12 @@
 package ba.unsa.etf.rma.fragmenti;
 
 import android.annotation.SuppressLint;
-import android.arch.lifecycle.ViewModelProviders;
+import androidx.lifecycle.ViewModelProviders;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,10 +39,14 @@ public class InformacijeFrag extends Fragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
+        System.out.println("FRAGMENT INFORMACIJE DRUZE");
         super.onCreate(savedInstanceState);
 
         assert getArguments() != null;
         trenutniKviz = (Kviz) getArguments().get("kviz");
+
+        System.out.println(trenutniKviz.getNaziv());
         azurirajBrojPreostalih(false);
         brojTacnihPitanja = 0;
         procenatTacnih = 0.0;
@@ -59,11 +63,15 @@ public class InformacijeFrag extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        ((TextView) view.findViewById(R.id.infNazivKviza)).setText(trenutniKviz.getNaziv());
+       ((TextView) view.findViewById(R.id.infNazivKviza)).setText(trenutniKviz.getNaziv());
         infBrojTacnihPitanja = view.findViewById(R.id.infBrojTacnihPitanja);
         infBrojPreostalihPitanja = view.findViewById(R.id.infBrojPreostalihPitanja);
         infProcenatTacni = view.findViewById(R.id.infProcenatTacni);
         infVrijeme = view.findViewById(R.id.infVrijeme);
+
+        System.out.println("JEL NULL OVO BA STA JE OVO? " + view.findViewById(R.id.labelBrojPreostalih));
+        view.findViewById(R.id.labelBrojPreostalih).bringToFront();
+        view.findViewById(R.id.labelBrojPreostalih).setVisibility(View.VISIBLE);
         azurirajSkor();
     }
 
@@ -71,6 +79,7 @@ public class InformacijeFrag extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         if (isAdded()) {
+            System.out.println("NE RAZUMIJEM DRUZE?!?!?!!?--------------");
             if (timeLeftInMilis != 0) {
                 countDownTimer = new CountDownTimer(timeLeftInMilis + 200, 1000) {
                     @Override
@@ -101,6 +110,8 @@ public class InformacijeFrag extends Fragment {
                 azurirajSkor();
             });
         }
+        else
+            System.out.println("GDJE JE FRAGMENT?!??!!?!?!?");
     }
 
 

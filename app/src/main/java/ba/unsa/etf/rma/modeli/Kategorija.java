@@ -3,11 +3,12 @@ package ba.unsa.etf.rma.modeli;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.Locale;
 import java.util.UUID;
 
 public class Kategorija implements Parcelable {
     private String naziv;
-    private int idIkonice;
+    private final int idIkonice;
     private String firestoreId;
 
     public Kategorija(String naziv, int idIkonice, String firestoreId) {
@@ -38,7 +39,7 @@ public class Kategorija implements Parcelable {
         if (naziv.equals("Svi") && idIkonice == -1)
             firestoreId = "CAT[-ALL-]";
         else
-            firestoreId = "CAT[" + UUID.randomUUID().toString().toUpperCase() + "]";
+            firestoreId = "CAT[" + UUID.randomUUID().toString().toUpperCase(Locale.getDefault()) + "]";
     }
 
     public String firestoreId() {

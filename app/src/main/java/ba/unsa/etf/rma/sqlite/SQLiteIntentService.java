@@ -4,7 +4,7 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.ResultReceiver;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 
@@ -81,7 +81,9 @@ public class SQLiteIntentService extends IntentService {
         } else if (request == SINKRONIZUJ_RANG_LISTE) {
             try {
                 Kviz igraniKviz = intent.getParcelableExtra("igraniKviz");
+                System.out.println("KVIZ JE : " + igraniKviz);
                 RangListaKviz rangListaKviz = AppDbHelper.getInstance(getApplicationContext()).dajRangListu(igraniKviz.firestoreId());
+                System.out.println("ranglista iz sql : " + rangListaKviz);
                 bundle.putParcelable("rangListaKviz", rangListaKviz);
                 resultReceiver.send(SINKRONIZUJ_RANG_LISTE, bundle);
             } catch (Exception e) {

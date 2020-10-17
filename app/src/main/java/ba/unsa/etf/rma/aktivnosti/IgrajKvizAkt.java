@@ -20,8 +20,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.support.v4.app.NotificationCompat;
-import android.support.v7.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -264,7 +264,7 @@ public class IgrajKvizAkt extends AppCompatActivity implements FirestoreResultRe
             if (!rangListaKviz.getLista().contains(igrac))
                 rangListaKviz.getLista().add(igrac);
 
-            Collections.sort(rangListaKviz.getLista(), (o1, o2) -> {
+            rangListaKviz.getLista().sort((o1, o2) -> {
                 if (o2.score().equals(o1.score()))
                     return o2.nickname().compareTo(o2.nickname());
 

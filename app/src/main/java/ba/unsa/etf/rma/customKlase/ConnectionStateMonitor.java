@@ -26,7 +26,7 @@ public class ConnectionStateMonitor extends ConnectivityManager.NetworkCallback 
 
     private final NetworkRequest networkRequest;
     private final NetworkAwareActivity networkAwareActivity;
-    private ConnectivityManager connectivityManager;
+    private final ConnectivityManager connectivityManager;
 
     public ConnectionStateMonitor(NetworkAwareActivity networkAwareActivity, ConnectivityManager connectivityManager) {
         networkRequest = new NetworkRequest.Builder()
@@ -56,7 +56,7 @@ public class ConnectionStateMonitor extends ConnectivityManager.NetworkCallback 
     }
 
     private static class CheckIfConnected extends AsyncTask<String, Void, Boolean> {
-        private WeakReference<NetworkAwareActivity> activityWeakReference;
+        private final WeakReference<NetworkAwareActivity> activityWeakReference;
 
         CheckIfConnected(NetworkAwareActivity networkAwareActivity) {
             this.activityWeakReference = new WeakReference<>(networkAwareActivity);

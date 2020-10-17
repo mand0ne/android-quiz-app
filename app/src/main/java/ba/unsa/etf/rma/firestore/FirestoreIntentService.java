@@ -4,7 +4,7 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.ResultReceiver;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -68,7 +68,7 @@ public class FirestoreIntentService extends IntentService {
     public static final int AZURIRAJ_LOKALNU_BAZU = 400;
 
     private static final String TAG = "FirestoreIntentService";
-    private String databaseUrl =
+    private final String databaseUrl =
             "https://firestore.googleapis.com/v1/projects/rma19mandalanel18088/databases/(default)/documents";
     private String token;
     private URL url;
@@ -87,6 +87,7 @@ public class FirestoreIntentService extends IntentService {
         assert intent != null;
         final ResultReceiver resultReceiver = intent.getParcelableExtra("receiver");
         token = intent.getStringExtra("token");
+        System.out.println("TOKEN: " + token);
         final int request = intent.getIntExtra("request", 0);
         Bundle bundle = new Bundle();
 
@@ -232,6 +233,7 @@ public class FirestoreIntentService extends IntentService {
                 break;
             case AZURIRAJ_LOKALNU_BAZU:
                 try {
+                    System.out.println("AZURIRAAAAAAAAAAAAAAAAAAAAAAAAAAAM");
                     azurirajLokalnuBazu();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -240,6 +242,7 @@ public class FirestoreIntentService extends IntentService {
             case SINKRONIZUJ_RANG_LISTE:
                 try {
                     RangListaKviz rangListaKviz = intent.getParcelableExtra("rangListaKviz");
+                    System.out.println("RANG LISTA KVIZE JE: " + rangListaKviz);
                     sinkronizujRangLisu(rangListaKviz);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -395,6 +398,7 @@ public class FirestoreIntentService extends IntentService {
             rangListaKviz.setNazivKviza(nazivKviza);
             rangListaKviz.setKvizFirestoreId(kvizFirestoreId);
         } catch (FileNotFoundException e) {
+            System.out.println("NEEE MOZEEEEEEEEEEEEEEEEEEEE");
             rangListaKviz = new RangListaKviz(nazivKviza, kvizFirestoreId);
         }
 
@@ -693,7 +697,7 @@ public class FirestoreIntentService extends IntentService {
         lista.addAll(rangListaKviz.getLista());
 
         ArrayList<Igrac> novaLista = new ArrayList<>(lista);
-        Collections.sort(novaLista, Collections.reverseOrder());
+        novaLista.sort(Collections.reverseOrder());
         firestoreRangLista.setLista(novaLista);
         azurirajRangListu(firestoreRangLista);
     }

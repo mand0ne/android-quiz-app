@@ -15,7 +15,7 @@ import ba.unsa.etf.rma.modeli.RangListaKviz;
 
 class FirestoreJsonParser {
 
-    private boolean filter;
+    private final boolean filter;
 
     FirestoreJsonParser() {
         filter = false;
@@ -45,7 +45,7 @@ class FirestoreJsonParser {
             e.printStackTrace();
         }
 
-        Collections.sort(listaKategorija, (o1, o2) -> o1.getNaziv().compareTo(o2.getNaziv()));
+        listaKategorija.sort((o1, o2) -> o1.getNaziv().compareTo(o2.getNaziv()));
         return listaKategorija;
     }
 

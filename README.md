@@ -19,6 +19,10 @@ Some relevant features include:
 The app uses Cloud Firestore to store relevant game informations (online mode) and SQLite (offline mode)
 
 
+<img src="screenshots/quizOverview.jpg" alt="Quiz overview" width="200"> <img src="screenshots/createCategory.jpg" alt="Creating a category" width="200"> <img src="screenshots/create-editQuiz.jpg" alt="Creating/Editing a quiz" width="200">
 
-  
-  
+
+<img src="screenshots/addQuestion.jpg" alt="Adding questions" width="200"> <img src="screenshots/playQuiz.jpg" alt="Playing a quiz" width="200"> <img src="screenshots/rankList.jpg" alt="Ranking list" width="200">
+
+
+You can download the debug APK file at [RMA - Quiz App](ttps://drive.google.com/file/d/1oMC4sgFCS3ERFA_oWFU32uDR8P6qYsZe/view?usp=sharing)
